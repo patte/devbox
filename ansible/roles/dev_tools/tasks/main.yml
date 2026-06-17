@@ -14,6 +14,7 @@
           - ca-certificates
           - unzip
           - jq
+          - btop
         state: present
         update_cache: yes
       tags:
