@@ -64,6 +64,7 @@
             "ca-certificates",
             "curl",
             "gnupg",
+            "locales",
             "lsb-release",
             "ufw",
             "vim",
@@ -71,6 +72,61 @@
         state: present
       tags:
         - apt
+
+    # --- Locale ----------------------------------------------------------
+    # We stop SSH from importing the client's locale (macOS sends values like
+    # "UTF-8" that don't exist on Linux), so sessions use the server default
+    # below.
+    - name: Generate en_US.UTF-8 locale
+      community.general.locale_gen:
+        name: en_US.UTF-8
+        state: present
+      tags:
+        - locale
+
+    - name: Set the default system locale
+      ansible.builtin.copy:
+        dest: /etc/default/locale
+        mode: "0644"
+        content: |
+          LANG=en_US.UTF-8
+          LC_ALL=en_US.UTF-8
+      tags:
+        - locale
+
+    - name: Don't import the client's locale over SSH
+      notify: Restart SSHd
+      ansible.builtin.replace:
+        path: /etc/ssh/sshd_config
+        regexp: '^(AcceptEnv\s+.*)$'
+        replace: '#\1'
+      tags:
+        - locale
+        - ssh
+
+    # --- MOTD: keep the header + system info, drop the Ubuntu ads --------
+    - name: Find noisy MOTD scripts
+      ansible.builtin.find:
+        paths: /etc/update-motd.d
+        patterns:
+          - "10-help-text"
+          - "50-motd-news"
+          - "*esm*"
+          - "90-updates-available"
+        file_type: any
+      register: motd_ads
+      tags:
+        - motd
+
+    - name: Disable noisy MOTD scripts (remove execute bit)
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: "0644"
+      loop: "{{ motd_ads.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+      tags:
+        - motd
 
     - name: Set user password
       ansible.builtin.user:
