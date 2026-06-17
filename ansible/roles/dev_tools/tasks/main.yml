@@ -15,6 +15,9 @@
           - unzip
           - jq
           - btop
+          - tmux
+          - neovim
+          - postgresql-client
         state: present
         update_cache: yes
       tags:
@@ -149,6 +152,8 @@
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
           export PATH="$HOME/.atuin/bin:$PATH"
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+          export PGHOST=127.0.0.1
+          export PGUSER=postgres
 
     - name: Configure interactive bash hooks (atuin + starship)
       become: true
@@ -163,6 +168,11 @@
             command -v atuin    >/dev/null 2>&1 && eval "$(atuin init bash)"
             command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"
           fi
+          alias gis='git status'
+          alias gif='git difftool'
+          alias gil='git log --decorate'
+          alias grep='grep --color=auto'
+          alias vi='nvim'
       tags:
         - shell
 
@@ -209,6 +219,8 @@
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           export PATH="$HOME/.atuin/bin:$PATH"
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+          export PGHOST=127.0.0.1
+          export PGUSER=postgres
       when: install_zsh | bool
       tags:
         - zsh
@@ -224,9 +236,28 @@
         block: |
           command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
           command -v atuin    >/dev/null 2>&1 && eval "$(atuin init zsh)"
+          alias gis='git status'
+          alias gif='git difftool'
+          alias gil='git log --decorate'
+          alias grep='grep --color=auto'
+          alias vi='nvim'
       when: install_zsh | bool
       tags:
         - zsh
+
+    # --- tmux config -----------------------------------------------------
+    - name: Install tmux config from dotfiles (non-fatal if unreachable)
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/patte/dotfiles/master/.tmux.conf
+        dest: "/home/{{ dev_user }}/.tmux.conf"
+        mode: "0644"
+        force: true
+      register: tmux_conf
+      failed_when: false
+      tags:
+        - tmux
 
     # --- Rust ------------------------------------------------------------
     - name: Check whether rustup is installed
