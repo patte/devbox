@@ -11,3 +11,6 @@ claude_code_package: "@anthropic-ai/claude-code"
 
 # Container tooling.
 install_podman: true
+
+# zsh + starship prompt (no plugin framework). zsh becomes the dev user's shell.
+install_zsh: true

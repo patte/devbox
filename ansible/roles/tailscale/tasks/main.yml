@@ -16,3 +16,21 @@
       include_tasks: oauth_and_up.yml
       when:
         - "'Logged out.' in tailscale_status.stdout"
+
+    # MagicDNS routes name resolution through Tailscale, so DNS only works once
+    # the node is actually connected. Under tailnet lock that requires the
+    # operator to sign the node. Block here (polling) until DNS resolves so later
+    # roles that download things don't fail.
+    - name: Notify operator to sign the node (tailnet lock)
+      ansible.builtin.debug:
+        msg: >-
+          If this hangs: sign "{{ ansible_hostname }}" at
+          https://login.tailscale.com/admin/machines (tailnet lock), then it continues.
+
+    - name: Wait for Tailscale connectivity / DNS
+      ansible.builtin.command: getent hosts github.com
+      register: ts_dns_check
+      until: ts_dns_check.rc == 0
+      retries: 90
+      delay: 10
+      changed_when: false

@@ -1,0 +1,4 @@
+---
+# Close public SSH and only allow it over the tailnet. Requires tailscale.
+# Set to false to keep SSH open on the public interface.
+ssh_tailscale_only: true

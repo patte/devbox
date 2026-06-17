@@ -1,13 +1,14 @@
 [coding]
 # --- Fresh Hetzner box (root only on init) ---------------------------------
-# Step 1 (once): create the dev user, connecting as root:
+# Step 1 (once): create the dev user, connecting as root (use the PUBLIC ip):
 #   scripts/bootstrap.sh --limit box1
-# Step 2 (now and always): provision, connecting as the dev user:
-#   scripts/provision.sh --limit box1
+# Step 2: provision as the dev user (still the public ip on the first run):
+#   scripts/provision.sh --limit box1     # sign the node when it asks (tailnet lock)
 # box1 ansible_host=1.2.3.4
 
-# --- Any host where the dev user already exists ----------------------------
-# box2 ansible_host=100.x.y.z
+# After the first provision, public SSH is closed — reach the box over tailscale,
+# so switch ansible_host to its tailscale name for all future runs:
+# box1 ansible_host=box1.<your-tailnet>.ts.net
 
-# --- Skip tailscale on a specific host -------------------------------------
+# --- Skip tailscale on a host (keeps public SSH open) ----------------------
 # box3 ansible_host=10.0.0.5 tailscale_enabled=false

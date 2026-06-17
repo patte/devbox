@@ -53,15 +53,14 @@
 
 - name: tailscale up
   ansible.builtin.command:
-    # --accept-dns=false: don't let Tailscale (MagicDNS) take over the box's
-    # resolver. Otherwise a node that isn't fully connected yet (e.g. pending
-    # tailnet-lock signing) points DNS at 100.100.100.100 with no route, which
-    # breaks all name resolution and every later download.
+    # MagicDNS stays enabled (default --accept-dns=true). Note: until the node is
+    # actually connected (e.g. signed under tailnet lock), its resolver points at
+    # 100.100.100.100 with no route, so DNS is down. The connectivity gate in
+    # main.yml waits for that before anything else needs DNS.
     cmd: >
       tailscale up
       --auth-key={{ tailscale_auth_key_resp.json.key }}
       --hostname={{ ansible_hostname }}
-      --accept-dns=false
   register: tailscale_up_result
   changed_when: "'already' not in tailscale_up_result.stderr | default('')"
   no_log: true

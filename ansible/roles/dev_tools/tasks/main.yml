@@ -148,20 +148,82 @@
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
           export PATH="$HOME/.atuin/bin:$PATH"
 
-    - name: Configure atuin shell hooks (interactive only)
+    - name: Configure interactive bash hooks (atuin + starship)
       become: true
       become_user: "{{ dev_user }}"
       ansible.builtin.blockinfile:
         path: "/home/{{ dev_user }}/.bashrc"
         create: true
         mode: "0644"
-        marker: "# {mark} ANSIBLE MANAGED: dev-tools atuin"
+        marker: "# {mark} ANSIBLE MANAGED: dev-tools interactive"
         block: |
-          if [[ $- == *i* ]] && command -v atuin >/dev/null 2>&1; then
-            eval "$(atuin init bash)"
+          if [[ $- == *i* ]]; then
+            command -v atuin    >/dev/null 2>&1 && eval "$(atuin init bash)"
+            command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"
           fi
       tags:
         - shell
+
+    # --- zsh + starship --------------------------------------------------
+    - name: Install zsh
+      become: true
+      ansible.builtin.apt:
+        name: zsh
+        state: present
+      when: install_zsh | bool
+      tags:
+        - zsh
+
+    - name: Install starship prompt
+      become: true
+      ansible.builtin.shell:
+        cmd: "set -o pipefail; curl -fsSL https://starship.rs/install.sh | sh -s -- --yes"
+        executable: /bin/bash
+        creates: /usr/local/bin/starship
+      when: install_zsh | bool
+      tags:
+        - zsh
+        - starship
+
+    - name: Make zsh the dev user's login shell
+      become: true
+      ansible.builtin.user:
+        name: "{{ dev_user }}"
+        shell: /usr/bin/zsh
+      when: install_zsh | bool
+      tags:
+        - zsh
+
+    - name: Configure ~/.zshenv (PATH/nvm — sourced for all zsh invocations)
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.blockinfile:
+        path: "/home/{{ dev_user }}/.zshenv"
+        create: true
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED: dev-tools path"
+        block: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          export PATH="$HOME/.atuin/bin:$PATH"
+      when: install_zsh | bool
+      tags:
+        - zsh
+
+    - name: "Configure ~/.zshrc (interactive: starship + atuin)"
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.blockinfile:
+        path: "/home/{{ dev_user }}/.zshrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED: dev-tools interactive"
+        block: |
+          command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
+          command -v atuin    >/dev/null 2>&1 && eval "$(atuin init zsh)"
+      when: install_zsh | bool
+      tags:
+        - zsh
 
     # --- Rootless podman socket -----------------------------------------
     - name: Enable rootless podman socket for {{ dev_user }}

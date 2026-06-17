@@ -1,0 +1,48 @@
+---
+# Restrict SSH to the tailnet: allow it only on tailscale0 and remove the public
+# allow rule. Runs LAST in the play, over the still-established (public) SSH
+# connection — UFW keeps existing connections alive, so this doesn't cut the run
+# off; only *new* public SSH connections are refused afterwards.
+#
+# Guarded on tailscale being enabled — otherwise this would lock the box out
+# entirely (no tailnet to reach it on).
+- name: Restrict SSH to Tailscale
+  become: true
+  when:
+    - ssh_tailscale_only | default(true) | bool
+    - tailscale_enabled | default(true) | bool
+  tags:
+    - ufw
+    - ssh
+  block:
+    - name: Allow SSH in over tailscale0
+      community.general.ufw:
+        rule: allow
+        direction: in
+        interface: tailscale0
+        proto: tcp
+        port: "22"
+        comment: "SSH over tailnet"
+
+    - name: Allow Tailscale direct-connection UDP
+      community.general.ufw:
+        rule: allow
+        proto: udp
+        port: "41641"
+        comment: "tailscale"
+
+    - name: Remove the public SSH allow rule
+      community.general.ufw:
+        rule: allow
+        port: ssh
+        delete: true
+
+    - name: Show resulting UFW rules
+      become: true
+      ansible.builtin.command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+
+    - name: UFW rules
+      ansible.builtin.debug:
+        msg: "{{ ufw_status.stdout_lines }}"

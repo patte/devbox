@@ -12,5 +12,11 @@
     - role: tailscale
       when: tailscale_enabled | default(true) | bool
 
-    # nvm + node, Claude Code, atuin, podman (+ compose).
+    # nvm + node, Claude Code, atuin, podman (+ compose), zsh + starship.
     - role: dev_tools
+
+    # LAST: close public SSH, allow it only over the tailnet. Needs tailscale up,
+    # so this must run after the tailscale role — and only when tailscale is on,
+    # otherwise we'd lock ourselves out of the box entirely.
+    - role: ssh_tailscale_only
+      when: tailscale_enabled | default(true) | bool
