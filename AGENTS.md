@@ -11,10 +11,11 @@ Notes for AI agents working in this repo. Keep short; append things future-you w
 - The operator's real key (`github.com/patte.keys`) is a Secretive / Touch-ID key — unusable headless.
 - So use a throwaway key for the session:
   1. `ssh-keygen -t ed25519 -N "" -f ~/.ssh/coder_test_ed25519`
-  2. register on Hetzner: `HCLOUD_TOKEN=$HETZNER_API_KEY ansible/.. cmd/hetzner/ensure-key.sh coder-test ~/.ssh/coder_test_ed25519.pub`
+  2. register on Hetzner (from repo root): `HCLOUD_TOKEN=$HETZNER_API_KEY cmd/hetzner/ensure-key.sh coder-test ~/.ssh/coder_test_ed25519.pub`
   3. inject into the dev user for the run via extra-vars file `/tmp/coder-extra.yml`:
      `additional_ssh_keys: [{key: "<pubkey>", comment: coder-test}]`, passed with `-e @/tmp/coder-extra.yml`
      (only needed on `bootstrap.sh`; create_user + system_setup install it).
+- Test host lives in `ansible/inventory/hosts.test` (sets the key + recycled-IP SSH flags). Use `-i inventory/hosts.test`. On the first run point `ansible_host` at the public IP; after the SSH lockdown switch it to the box's tailscale IP/name to keep iterating.
 - SSH flags to avoid recycled-IP host-key errors:
   `-o IdentitiesOnly=yes -o IdentityAgent=none -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no`
 - **Clean up at end of session:** delete `~/.ssh/coder_test_ed25519*`, remove the key from Hetzner, and from the box (or just delete the box).
