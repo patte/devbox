@@ -2,7 +2,8 @@
 
 Provisions Ubuntu hosts into carefree playfields for AI agents: hardened base
 system, optional Tailscale, and a developer toolchain (nvm + Node, Claude Code,
-atuin, podman + compose). Your laptop stays "just a terminal" — you SSH in.
+Rust, atuin, btop, podman + compose, zsh + starship). Your laptop stays "just a
+terminal" — you SSH in over tailscale.
 
 ## Layout
 
@@ -25,7 +26,7 @@ ansible/
 │   ├── create_user/            # makes the dev user (+ passwordless sudo)
 │   ├── system_setup/           # ssh hardening, ufw, unattended-upgrades, ...
 │   ├── tailscale/              # optional per host (tailscale_enabled); waits for signing
-│   ├── dev_tools/              # nvm+node, Claude Code, atuin, podman+compose, zsh+starship
+│   ├── dev_tools/              # node, Claude Code, Rust, atuin, btop, podman+compose, zsh+starship
 │   └── ssh_tailscale_only/     # close public SSH, allow only over tailscale (runs last)
 └── scripts/
     ├── setup.sh                # install ansible collections (run once)

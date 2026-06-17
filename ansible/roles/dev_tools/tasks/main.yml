@@ -148,6 +148,7 @@
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
           export PATH="$HOME/.atuin/bin:$PATH"
+          [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
     - name: Configure interactive bash hooks (atuin + starship)
       become: true
@@ -207,6 +208,7 @@
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           export PATH="$HOME/.atuin/bin:$PATH"
+          [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
       when: install_zsh | bool
       tags:
         - zsh
@@ -225,6 +227,42 @@
       when: install_zsh | bool
       tags:
         - zsh
+
+    # --- Rust ------------------------------------------------------------
+    - name: Check whether rustup is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.stat:
+        path: "/home/{{ dev_user }}/.cargo/bin/rustup"
+      register: rustup_installed
+      when: install_rust | bool
+      tags:
+        - rust
+
+    - name: Install rustup + stable toolchain
+      become: true
+      become_user: "{{ dev_user }}"
+      # --no-modify-path: we manage PATH ourselves (see the shell-init blocks),
+      # so rustup shouldn't edit the shell rc files.
+      ansible.builtin.shell:
+        cmd: "set -o pipefail; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable"
+        executable: /bin/bash
+      when:
+        - install_rust | bool
+        - not rustup_installed.stat.exists
+      tags:
+        - rust
+
+    - name: Update Rust stable to the latest
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.command:
+        cmd: "/home/{{ dev_user }}/.cargo/bin/rustup update stable"
+      register: rustup_update
+      changed_when: "'updated' in rustup_update.stdout or 'installed' in rustup_update.stdout"
+      when: install_rust | bool
+      tags:
+        - rust
 
     # --- Rootless podman socket -----------------------------------------
     - name: Enable rootless podman socket for {{ dev_user }}

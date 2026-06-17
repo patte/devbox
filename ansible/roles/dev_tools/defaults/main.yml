@@ -14,3 +14,6 @@ install_podman: true
 
 # zsh + starship prompt (no plugin framework). zsh becomes the dev user's shell.
 install_zsh: true
+
+# Rust toolchain via rustup (latest stable).
+install_rust: true
