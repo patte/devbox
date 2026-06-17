@@ -1,0 +1,18 @@
+---
+- name: Provision coding environment
+  hosts: coding
+  gather_facts: true
+  roles:
+    # Creates the dev user. Only runs when connected as root (e.g. fresh Hetzner).
+    # On hosts where you already connect as your user, this is skipped.
+    - role: create_user
+
+    # Base hardening, firewall, unattended upgrades, etc.
+    - role: system_setup
+
+    # Tailscale. Optional per host: set `tailscale_enabled: false` to skip.
+    - role: tailscale
+      when: tailscale_enabled | default(true) | bool
+
+    # nvm + node, Claude Code, atuin, podman (+ compose).
+    - role: dev_tools

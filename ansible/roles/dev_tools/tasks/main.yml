@@ -1,0 +1,162 @@
+---
+- name: Developer tooling
+  tags:
+    - dev_tools
+  block:
+    # --- System packages -------------------------------------------------
+    - name: Install base developer packages
+      become: true
+      ansible.builtin.apt:
+        name:
+          - git
+          - build-essential
+          - curl
+          - ca-certificates
+          - unzip
+          - jq
+        state: present
+        update_cache: yes
+      tags:
+        - apt
+
+    - name: Install podman and compose
+      become: true
+      ansible.builtin.apt:
+        name:
+          - podman
+          - podman-compose
+          - uidmap
+          - slirp4netns
+          - fuse-overlayfs
+          - dbus-user-session
+        state: present
+      when: install_podman | bool
+      tags:
+        - podman
+
+    # --- Per-user setup --------------------------------------------------
+    - name: Resolve dev user uid
+      become: true
+      ansible.builtin.command: "id -u {{ dev_user }}"
+      register: dev_user_uid_result
+      changed_when: false
+
+    - name: Set dev user uid fact
+      ansible.builtin.set_fact:
+        dev_user_uid: "{{ dev_user_uid_result.stdout }}"
+
+    - name: Enable linger for {{ dev_user }} (rootless containers survive logout)
+      become: true
+      ansible.builtin.command:
+        cmd: "loginctl enable-linger {{ dev_user }}"
+        creates: "/var/lib/systemd/linger/{{ dev_user }}"
+      when: install_podman | bool
+      tags:
+        - podman
+
+    # --- nvm + node ------------------------------------------------------
+    - name: Check whether nvm is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.stat:
+        path: "/home/{{ dev_user }}/.nvm/nvm.sh"
+      register: nvm_installed
+      tags:
+        - nvm
+
+    - name: Install nvm
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.shell:
+        cmd: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/{{ nvm_version }}/install.sh | bash"
+        executable: /bin/bash
+      when: not nvm_installed.stat.exists
+      tags:
+        - nvm
+
+    - name: Install Node.js via nvm
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.shell:
+        cmd: |
+          export NVM_DIR="$HOME/.nvm"
+          . "$NVM_DIR/nvm.sh"
+          nvm install {{ node_version }}
+          nvm alias default {{ node_version }}
+        executable: /bin/bash
+      register: node_install
+      changed_when: "'is already installed' not in node_install.stdout"
+      tags:
+        - nvm
+        - node
+
+    # --- Claude Code -----------------------------------------------------
+    - name: Install Claude Code (global npm package)
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.shell:
+        cmd: |
+          export NVM_DIR="$HOME/.nvm"
+          . "$NVM_DIR/nvm.sh"
+          npm install -g {{ claude_code_package }}
+        executable: /bin/bash
+      register: claude_install
+      changed_when: "'added' in claude_install.stdout or 'changed' in claude_install.stdout or 'updated' in claude_install.stdout"
+      when: install_claude_code | bool
+      tags:
+        - claude
+
+    # --- atuin -----------------------------------------------------------
+    - name: Check whether atuin is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.stat:
+        path: "/home/{{ dev_user }}/.atuin/bin/atuin"
+      register: atuin_installed
+      tags:
+        - atuin
+
+    - name: Install atuin
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.shell:
+        cmd: "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh"
+        executable: /bin/bash
+      when: not atuin_installed.stat.exists
+      tags:
+        - atuin
+
+    # --- Shell init ------------------------------------------------------
+    - name: Configure shell init for nvm + atuin
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.blockinfile:
+        path: "/home/{{ dev_user }}/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED: dev-tools"
+        block: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+          export PATH="$HOME/.atuin/bin:$PATH"
+          command -v atuin >/dev/null 2>&1 && eval "$(atuin init bash)"
+      tags:
+        - shell
+
+    # --- Rootless podman socket -----------------------------------------
+    - name: Enable rootless podman socket for {{ dev_user }}
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.systemd:
+        name: podman.socket
+        enabled: true
+        state: started
+        scope: user
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ dev_user_uid }}"
+      when: install_podman | bool
+      register: podman_socket
+      failed_when: false
+      tags:
+        - podman

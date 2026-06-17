@@ -1,0 +1,233 @@
+---
+- name: Basic system setup
+  become: true
+  tags:
+    - system
+  block:
+    - name: Add SSH keys for {{ dev_user }}
+      ansible.posix.authorized_key:
+        user: "{{ dev_user }}"
+        state: present
+        key: https://github.com/patte.keys
+        comment: "https://github.com/patte.keys"
+      tags:
+        - ssh
+        - user
+
+    - name: Add additional SSH keys
+      ansible.posix.authorized_key:
+        user: "{{ dev_user }}"
+        state: present
+        key: "{{ item.key }}"
+        comment: "{{ item.comment | default(omit) }}"
+      with_items: "{{ additional_ssh_keys }}"
+      tags:
+        - ssh
+        - user
+
+    - name: Remove cloud init SSH config
+      notify: Restart SSHd
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+        state: absent
+      tags:
+        - ssh
+
+    - name: Harden SSHd
+      notify: Restart SSHd
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-harden.conf
+        mode: "0600"
+        content: |
+          # Disable password auth -> pubkey only
+          PasswordAuthentication no
+          PermitEmptyPasswords no
+          PubkeyAuthentication yes
+
+          # Disable login as root
+          PermitRootLogin no
+      tags:
+        - ssh
+
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+      tags:
+        - apt
+
+    - name: Install dependencies
+      apt:
+        name:
+          [
+            "apt-transport-https",
+            "ca-certificates",
+            "curl",
+            "gnupg",
+            "lsb-release",
+            "ufw",
+            "vim",
+          ]
+        state: present
+      tags:
+        - apt
+
+    - name: Set user password
+      ansible.builtin.user:
+        name: "{{ dev_user }}"
+        password: "{{ ansible_become_pass | string | password_hash('sha512') }}"
+      tags:
+        - user
+
+    - name: Remove cloud init sudo policy (so sudo requires the users password)
+      ansible.builtin.file:
+        path: /etc/sudoers.d/90-cloud-init-users
+        state: absent
+      tags:
+        - sudo
+
+    - name: Set sudo timeout to 2h
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        regexp: 'Defaults\s+env_reset'
+        line: "Defaults	env_reset,timestamp_timeout=120"
+        validate: "visudo -cf %s"
+      tags:
+        - sudo
+
+    - name: Allow SSH in UFW
+      notify: Reload UFW
+      community.general.ufw:
+        port: ssh
+        rule: allow
+      tags:
+        - ufw
+        - ssh
+
+    - name: Enable UFW
+      notify: Reload UFW
+      community.general.ufw:
+        state: enabled
+        policy: deny
+      tags:
+        - ufw
+
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+      tags:
+        - hostname
+
+    - name: Enable DNSv6
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/resolved.conf
+        regexp: "#?DNSStubListenerExtra=.*"
+        line: "DNSStubListenerExtra=[::1]:53"
+      tags:
+        - dns
+      notify: Restart systemd-resolved
+
+    - name: Install unattended upgrades
+      tags:
+        - unattended-upgrades
+      block:
+        - name: Enable unattended upgrades (add update notifier)
+          ansible.builtin.apt:
+            name: update-notifier-common
+            state: present
+            update_cache: yes
+
+        - name: Enable unattended upgrades (add update source)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*\"\${distro_id}:\${distro_codename}-updates\";'
+            line: ' 	"${distro_id}:${distro_codename}-updates";'
+
+        - name: Enable unattended upgrades (configure mail)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::Mail\s+\".*\";'
+            line: 'Unattended-Upgrade::Mail "{{ admin_email }}";'
+
+        - name: Enable unattended upgrades (report on error)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::MailReport\s+\".*\";'
+            line: 'Unattended-Upgrade::MailReport "only-on-error";'
+
+        - name: Enable unattended upgrades (remove unused kernel packages)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::Remove-Unused-Kernel-Packages\s+\"(false|true)\";'
+            line: 'Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";'
+
+        - name: Enable unattended upgrades (remove new unused dependencies)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::Remove-New-Unused-Dependencies\s+\"(false|true)\";'
+            line: 'Unattended-Upgrade::Remove-New-Unused-Dependencies "true";'
+
+        - name: Enable unattended upgrades (autoclean)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::Remove-Unused-Dependencies\s+\"(false|true)\";'
+            line: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
+
+        - name: Enable unattended upgrades (auto reboot)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::Automatic-Reboot\s+\"(false|true)\";'
+            line: 'Unattended-Upgrade::Automatic-Reboot "true";'
+
+        - name: Enable unattended upgrades (auto reboot time)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::Automatic-Reboot-Time\s+\"[0-9:]+\";'
+            line: 'Unattended-Upgrade::Automatic-Reboot-Time "04:00";'
+
+        - name: Enable unattended upgrades (enable logging)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '/?/?\s*Unattended-Upgrade::SyslogEnable\s+\"(false|true)\";'
+            line: 'Unattended-Upgrade::SyslogEnable "true";'
+
+        - name: Enable unattended upgrades (download packages)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/10periodic
+            regexp: '/?/?\s*APT::Periodic::Download-Upgradeable-Packages\s+"\d";'
+            line: 'APT::Periodic::Download-Upgradeable-Packages "1";'
+
+        - name: Enable unattended upgrades (autoclean)
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/10periodic
+            regexp: '/?/?\s*APT::Periodic::AutocleanInterval\s+"\d";'
+            line: 'APT::Periodic::AutocleanInterval "1";'
+
+        - name: Enable unattended upgrades (update)
+          ansible.builtin.copy:
+            dest: /etc/apt/apt.conf.d/50disable-conffile-prompt
+            content: |
+              # https://raphaelhertzog.com/2010/09/21/debian-conffile-configuration-file-managed-by-dpkg/
+              Dpkg::Options {
+                "--force-confdef";
+                "--force-confold";
+              }
+
+    - name: Check if a reboot is required.
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_checksum: no
+      register: reboot_required_file
+
+    - name: Reboot the server (if required).
+      ansible.builtin.reboot:
+        connect_timeout: 2
+        reboot_timeout: 300
+      when: reboot_required_file.stat.exists == true
+
+    - name: Remove dependencies that are no longer required.
+      ansible.builtin.apt:
+        autoremove: yes
+
+    - name: Flush handlers
+      meta: flush_handlers

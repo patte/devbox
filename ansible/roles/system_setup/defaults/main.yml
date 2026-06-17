@@ -1,0 +1,8 @@
+---
+# Address that unattended-upgrades mails on errors (needs a working MTA to
+# actually deliver; harmless otherwise).
+admin_email: "patte@example.com"
+
+# Extra SSH keys to authorize for the dev user, on top of github.com/patte.keys.
+# Each item: { key: "ssh-ed25519 ...", comment: "label" }
+additional_ssh_keys: []

@@ -1,0 +1,20 @@
+---
+# The unprivileged user that owns the coding environment. Created automatically
+# on root-only hosts (Hetzner) by the create_user role.
+dev_user: patte
+
+# Provision tailscale by default. Override per host in the inventory with
+# `tailscale_enabled=false` to skip it on a given box.
+tailscale_enabled: true
+
+# Tags applied when joining the tailnet (must exist in your tailnet ACLs).
+tailscale_tags: ["tag:server"]
+
+# Mail target for unattended-upgrades error reports.
+admin_email: "patte@example.com"
+
+# Extra SSH keys for the dev user (github.com/patte.keys is always added).
+additional_ssh_keys: []
+
+# Secrets live in vault.yml (encrypted). Copy vault.example.yml -> vault.yml,
+# fill it in, then encrypt with: scripts/vault.sh encrypt inventory/group_vars/vault.yml

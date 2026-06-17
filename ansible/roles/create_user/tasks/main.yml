@@ -1,0 +1,35 @@
+---
+# Some providers (e.g. Hetzner) only give you root on a fresh box.
+# This role bootstraps the unprivileged dev user so the rest of the
+# playbook (and future runs) can connect as that user instead of root.
+# It is skipped automatically when you are not connecting as root.
+- name: Bootstrap the dev user
+  become: true
+  when: ansible_user | default('') == 'root'
+  tags:
+    - create_user
+    - user
+  block:
+    - name: Ensure the dev user exists with sudo
+      ansible.builtin.user:
+        name: "{{ dev_user }}"
+        shell: /bin/bash
+        groups: sudo
+        append: true
+        create_home: true
+        password: "{{ ansible_become_pass | string | password_hash('sha512') }}"
+
+    - name: Add SSH key for {{ dev_user }} from GitHub
+      ansible.posix.authorized_key:
+        user: "{{ dev_user }}"
+        state: present
+        key: https://github.com/patte.keys
+        comment: "https://github.com/patte.keys"
+
+    - name: Add additional SSH keys for {{ dev_user }}
+      ansible.posix.authorized_key:
+        user: "{{ dev_user }}"
+        state: present
+        key: "{{ item.key }}"
+        comment: "{{ item.comment | default(omit) }}"
+      with_items: "{{ additional_ssh_keys }}"

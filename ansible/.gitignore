@@ -1,0 +1,6 @@
+# Plaintext vault before encryption is committed by mistake.
+# (Once encrypted with ansible-vault, vault.yml is safe to commit — remove the
+#  line below if you want to track the encrypted file.)
+inventory/group_vars/vault.yml
+
+*.retry

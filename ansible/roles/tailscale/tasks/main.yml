@@ -1,0 +1,18 @@
+---
+- name: Setup tailscale
+  become: true
+  block:
+    - name: Install tailscale
+      include_tasks: install.yml
+
+    - name: Check tailscale status
+      ansible.builtin.command:
+        cmd: tailscale status
+      register: tailscale_status
+      changed_when: false
+      failed_when: false
+
+    - name: Get OAuth access token and start
+      include_tasks: oauth_and_up.yml
+      when:
+        - "'Logged out.' in tailscale_status.stdout"

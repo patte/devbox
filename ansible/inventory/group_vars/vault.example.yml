@@ -1,0 +1,16 @@
+---
+# Copy this file to `vault.yml`, fill in the real values, then encrypt it:
+#   scripts/vault.sh encrypt inventory/group_vars/vault.yml
+# (re-edit later with: scripts/vault.sh edit inventory/group_vars/vault.yml)
+#
+# vault.yml is loaded automatically as group_vars for [coding] and is safe to
+# commit *once encrypted*. Never commit it while plaintext.
+
+# Sudo password for the dev user. Also used to set the user's password on first
+# provision, so it becomes the become password for subsequent runs.
+ansible_become_pass: "CHANGE_ME"
+
+# Tailscale OAuth client (https://login.tailscale.com/admin/settings/oauth).
+# The client needs the `auth_keys` write scope and access to tailscale_tags.
+tailscale_oauth_client_id: "CHANGE_ME"
+tailscale_oauth_secret: "CHANGE_ME"

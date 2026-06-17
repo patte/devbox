@@ -1,0 +1,73 @@
+---
+- name: Get OAuth access token
+  ansible.builtin.uri:
+    url: https://api.tailscale.com/api/v2/oauth/token
+    method: POST
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body_format: form-urlencoded
+    body:
+      client_id: "{{ tailscale_oauth_client_id }}"
+      client_secret: "{{ tailscale_oauth_secret }}"
+    return_content: true
+    status_code: 200
+  register: tailscale_oauth_token
+  no_log: true
+
+- name: Fail if token missing
+  ansible.builtin.fail:
+    msg: "Failed to get access token from Tailscale API"
+  when: tailscale_oauth_token.json.access_token is not defined
+
+- name: Create auth key
+  ansible.builtin.uri:
+    url: https://api.tailscale.com/api/v2/tailnet/-/keys
+    method: POST
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer {{ tailscale_oauth_token.json.access_token }}"
+    body_format: json
+    body:
+      capabilities:
+        devices:
+          create:
+            reusable: false
+            ephemeral: false
+            preauthorized: true
+            tags: "{{ tailscale_tags }}"
+    return_content: true
+    status_code: 200
+  register: tailscale_auth_key_resp
+  no_log: true
+
+- name: Fail if auth key missing
+  ansible.builtin.fail:
+    msg: "Failed to generate Tailscale auth key"
+  when: tailscale_auth_key_resp.json.key is not defined
+
+- name: Ensure tailscaled is running
+  ansible.builtin.service:
+    name: tailscaled
+    state: started
+    enabled: true
+
+- name: tailscale up
+  ansible.builtin.command:
+    cmd: >
+      tailscale up
+      --auth-key={{ tailscale_auth_key_resp.json.key }}
+      --hostname={{ ansible_hostname }}
+  register: tailscale_up_result
+  changed_when: "'already' not in tailscale_up_result.stderr | default('')"
+  no_log: true
+
+- name: Log tailscale status
+  ansible.builtin.command:
+    cmd: tailscale status
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+- name: Log tailscale status output
+  ansible.builtin.debug:
+    msg: "Tailscale status: {{ tailscale_status.stdout }}"

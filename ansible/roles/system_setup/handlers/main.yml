@@ -1,0 +1,17 @@
+---
+- name: Restart SSHd
+  become: true
+  service:
+    name: ssh
+    state: restarted
+
+- name: Restart systemd-resolved
+  become: true
+  ansible.builtin.service:
+    name: systemd-resolved
+    state: restarted
+
+- name: Reload UFW
+  become: true
+  community.general.ufw:
+    state: reloaded
