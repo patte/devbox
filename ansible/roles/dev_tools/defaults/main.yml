@@ -5,9 +5,8 @@ nvm_version: "v0.40.1"
 # Node version for `nvm install` / `nvm alias default` (e.g. "lts/*", "22", "20.11.0").
 node_version: "lts/*"
 
-# Claude Code (installed globally via the nvm-managed npm).
+# Claude Code, via the recommended native installer (installs to ~/.local/bin
 install_claude_code: true
-claude_code_package: "@anthropic-ai/claude-code"
 
 # Container tooling.
 install_podman: true

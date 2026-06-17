@@ -94,19 +94,28 @@
         - nvm
         - node
 
-    # --- Claude Code -----------------------------------------------------
-    - name: Install Claude Code (global npm package)
+    # --- Claude Code (native installer) ----------------------------------
+    - name: Check whether Claude Code is installed
       become: true
       become_user: "{{ dev_user }}"
-      ansible.builtin.shell:
-        cmd: |
-          export NVM_DIR="$HOME/.nvm"
-          . "$NVM_DIR/nvm.sh"
-          npm install -g {{ claude_code_package }}
-        executable: /bin/bash
-      register: claude_install
-      changed_when: "'added' in claude_install.stdout or 'changed' in claude_install.stdout or 'updated' in claude_install.stdout"
+      ansible.builtin.stat:
+        path: "/home/{{ dev_user }}/.local/bin/claude"
+      register: claude_installed
       when: install_claude_code | bool
+      tags:
+        - claude
+
+    - name: Install Claude Code (native installer)
+      become: true
+      become_user: "{{ dev_user }}"
+      # Recommended over npm. Installs to ~/.local/bin and self-updates, so we
+      # only run it when missing.
+      ansible.builtin.shell:
+        cmd: "set -o pipefail; curl -fsSL https://claude.ai/install.sh | bash"
+        executable: /bin/bash
+      when:
+        - install_claude_code | bool
+        - not claude_installed.stat.exists
       tags:
         - claude
 
@@ -150,7 +159,7 @@
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-          export PATH="$HOME/.atuin/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/.atuin/bin:$PATH"
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
           export PGHOST=127.0.0.1
           export PGUSER=postgres
@@ -217,7 +226,7 @@
         block: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          export PATH="$HOME/.atuin/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/.atuin/bin:$PATH"
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
           export PGHOST=127.0.0.1
           export PGUSER=postgres
