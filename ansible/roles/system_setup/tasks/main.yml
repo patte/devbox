@@ -76,6 +76,7 @@
       ansible.builtin.user:
         name: "{{ dev_user }}"
         password: "{{ ansible_become_pass | string | password_hash('sha512') }}"
+        update_password: on_create
       tags:
         - user
 

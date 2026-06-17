@@ -18,6 +18,18 @@
         append: true
         create_home: true
         password: "{{ ansible_become_pass | string | password_hash('sha512') }}"
+        update_password: on_create
+
+    # Passwordless sudo for the dev user. This keeps provisioning reliable across
+    # sudo and sudo-rs (Ubuntu 26.04+ ships sudo-rs, whose password prompt the
+    # ansible become plugin can't detect). Fine for a single-user, key-only,
+    # tailscale-fronted dev sandbox. Drop this task to require a sudo password.
+    - name: Allow passwordless sudo for the dev user
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/90-coder-{{ dev_user }}"
+        mode: "0440"
+        content: "{{ dev_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        validate: "visudo -cf %s"
 
     - name: Add SSH key for {{ dev_user }} from GitHub
       ansible.posix.authorized_key:

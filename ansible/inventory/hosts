@@ -1,12 +1,12 @@
 [coding]
 # --- Fresh Hetzner box (root only on init) ---------------------------------
-# First run: bootstrap as root -> creates the `patte` user, hardens SSH, etc.
+# Step 1 (once): create the dev user, connecting as root:
 #   scripts/bootstrap.sh --limit box1
-# After the first run root login is disabled; drop ansible_user=root and just
-# connect as patte from then on.
-# box1 ansible_host=1.2.3.4 ansible_user=root
+# Step 2 (now and always): provision, connecting as the dev user:
+#   scripts/provision.sh --limit box1
+# box1 ansible_host=1.2.3.4
 
-# --- Any host where you already have your user -----------------------------
+# --- Any host where the dev user already exists ----------------------------
 # box2 ansible_host=100.x.y.z
 
 # --- Skip tailscale on a specific host -------------------------------------

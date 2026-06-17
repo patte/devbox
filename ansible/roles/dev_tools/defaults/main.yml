@@ -2,8 +2,8 @@
 # nvm release tag to install (https://github.com/nvm-sh/nvm/releases).
 nvm_version: "v0.40.1"
 
-# Node version passed to `nvm install` (e.g. "--lts", "22", "20.11.0").
-node_version: "--lts"
+# Node version for `nvm install` / `nvm alias default` (e.g. "lts/*", "22", "20.11.0").
+node_version: "lts/*"
 
 # Claude Code (installed globally via the nvm-managed npm).
 install_claude_code: true

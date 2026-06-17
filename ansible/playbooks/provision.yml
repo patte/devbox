@@ -2,11 +2,9 @@
 - name: Provision coding environment
   hosts: coding
   gather_facts: true
+  # Connects as the dev user (ansible.cfg remote_user). On a fresh root-only host,
+  # run scripts/bootstrap.sh first to create that user.
   roles:
-    # Creates the dev user. Only runs when connected as root (e.g. fresh Hetzner).
-    # On hosts where you already connect as your user, this is skipped.
-    - role: create_user
-
     # Base hardening, firewall, unattended upgrades, etc.
     - role: system_setup
 

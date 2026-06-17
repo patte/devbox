@@ -119,28 +119,47 @@
     - name: Install atuin
       become: true
       become_user: "{{ dev_user }}"
+      # --non-interactive: ansible's become pty makes /dev/tty openable, so the
+      # installer would otherwise prompt (sync/import) and block forever.
       ansible.builtin.shell:
-        cmd: "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh"
+        cmd: "set -o pipefail; curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive"
         executable: /bin/bash
       when: not atuin_installed.stat.exists
       tags:
         - atuin
 
     # --- Shell init ------------------------------------------------------
-    - name: Configure shell init for nvm + atuin
+    # Two blocks: the PATH/nvm block goes at the TOP of .bashrc, before Ubuntu's
+    # `case $- in *i*) ;; *) return` guard, so node/npm/claude/atuin are available
+    # to non-interactive shells too (e.g. `ssh host 'node ...'`). atuin's shell
+    # hooks only make sense interactively, so they stay at the bottom (guarded).
+    - name: Put nvm + tool PATH at the top of .bashrc (works non-interactively)
       become: true
       become_user: "{{ dev_user }}"
       ansible.builtin.blockinfile:
         path: "/home/{{ dev_user }}/.bashrc"
         create: true
         mode: "0644"
-        marker: "# {mark} ANSIBLE MANAGED: dev-tools"
+        marker: "# {mark} ANSIBLE MANAGED: dev-tools path"
+        insertbefore: BOF
         block: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
           export PATH="$HOME/.atuin/bin:$PATH"
-          command -v atuin >/dev/null 2>&1 && eval "$(atuin init bash)"
+
+    - name: Configure atuin shell hooks (interactive only)
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.blockinfile:
+        path: "/home/{{ dev_user }}/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED: dev-tools atuin"
+        block: |
+          if [[ $- == *i* ]] && command -v atuin >/dev/null 2>&1; then
+            eval "$(atuin init bash)"
+          fi
       tags:
         - shell
 

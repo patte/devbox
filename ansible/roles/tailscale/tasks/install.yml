@@ -3,13 +3,16 @@
   become: true
   block:
     - name: Add Tailscale GPG key
-      ansible.builtin.apt_key:
+      # apt-key is removed in modern Ubuntu (26.04+); use a keyring file instead.
+      ansible.builtin.get_url:
         url: https://pkgs.tailscale.com/stable/ubuntu/focal.noarmor.gpg
-        state: present
+        dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+        mode: "0644"
+        force: false
 
     - name: Add Tailscale APT repository
       ansible.builtin.apt_repository:
-        repo: "deb https://pkgs.tailscale.com/stable/ubuntu focal main"
+        repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu focal main"
         state: present
         filename: tailscale
 

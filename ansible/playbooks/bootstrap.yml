@@ -1,0 +1,11 @@
+---
+# Run ONCE against a fresh, root-only host (e.g. Hetzner) via scripts/bootstrap.sh.
+# Connects as root and creates the unprivileged dev user. Everything else
+# (hardening, reboots, dev tools) happens in provision.yml as that user — which
+# matters because system_setup disables root SSH login and may reboot, so the
+# rest of the run must not depend on the root connection.
+- name: Bootstrap dev user on root-only hosts
+  hosts: coding
+  gather_facts: true
+  roles:
+    - role: create_user

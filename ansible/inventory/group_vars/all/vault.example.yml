@@ -1,0 +1,20 @@
+---
+# Copy this file to `vault.yml`, fill in the real values, then encrypt it:
+#   scripts/vault.sh encrypt inventory/group_vars/all/vault.yml
+# (re-edit later with: scripts/vault.sh edit inventory/group_vars/all/vault.yml)
+#
+# Files in group_vars/all/ load automatically for every host; vault.yml is safe
+# to commit *once encrypted*. Never commit it while plaintext.
+
+# Password set for the dev user account (console/su). Sudo itself is passwordless
+# (see create_user), so this is not used as a become password.
+ansible_become_pass: "CHANGE_ME"
+
+# Tailscale OAuth client (https://login.tailscale.com/admin/settings/oauth).
+# The client needs the `auth_keys` write scope and access to tailscale_tags.
+tailscale_oauth_client_id: "CHANGE_ME"
+tailscale_oauth_secret: "CHANGE_ME"
+
+# Address that unattended-upgrades emails on errors (kept here so the public
+# repo's plaintext vars don't expose it).
+admin_email: "CHANGE_ME"
