@@ -15,6 +15,17 @@
     - ufw
     - ssh
   block:
+    # Dev boxes: trust the tailnet fully. With public-incoming default-deny still
+    # in place, this opens every port to tailnet peers (dev servers, dbs, etc.)
+    # without exposing anything publicly. Makes the SSH-only rule below redundant,
+    # but we keep that one as explicit documentation of intent.
+    - name: Allow all inbound over tailscale0
+      community.general.ufw:
+        rule: allow
+        direction: in
+        interface: tailscale0
+        comment: "allow all from tailnet (dev)"
+
     - name: Allow SSH in over tailscale0
       community.general.ufw:
         rule: allow
