@@ -4,7 +4,10 @@ Notes for AI agents working in this repo. Keep short; append things future-you w
 
 ## Secrets
 - `ansible/secrets.txt` (gitignored) holds `ANSIBLE_VAULT_PASSWORD` and `HETZNER_API_KEY`.
-  Source it in each shell; **never echo the values** into output/transcript.
+  `source` it into the environment (`set -a; source ansible/secrets.txt; set +a`) and
+  reference the variables by name (`$HETZNER_API_KEY`, etc.). **Never** `Read`/`cat` the
+  file, inline the literal values into a command, or `echo` them — that leaks the plaintext
+  into the transcript. (`export HCLOUD_TOKEN="$HETZNER_API_KEY"` for the cmd/hetzner scripts.)
 - Encrypted vault: `ansible/inventory/group_vars/all/vault.yml`. Edit via `ansible/scripts/vault.sh`.
 
 ## Connecting to test boxes (SSH key)
