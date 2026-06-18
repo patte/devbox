@@ -8,7 +8,13 @@ which is plain OpenStack. The Hetzner equivalents live in
 
 ## Prerequisites
 
-- The `openstack` client (`brew install openstackclient`) and `jq`.
+- `jq`, and the `openstack` client (`python-openstackclient`). The scripts use a
+  local install if present (`brew install openstackclient`); otherwise they fall
+  back to running it via `uvx --from python-openstackclient openstack` (needs
+  [uv][uv] — no local install required, downloaded once and cached). Override
+  the runner with `$INFOMANIAK_OS_CMD`.
+
+[uv]: https://docs.astral.sh/uv/
 - `clouds.yaml` in this folder (gitignored — it carries your project/account
   identifiers, so it is per-project; see below).
 - `INFOMANIAK` (the OpenStack API password) exported in the environment. It

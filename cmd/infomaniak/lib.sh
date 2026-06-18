@@ -9,7 +9,10 @@
 # Region/cloud is selectable via $INFOMANIAK_CLOUD (default: dc3-a). The other
 # cloud defined in clouds.yaml is PCP-GYK2Y4A-dc4-a.
 #
-# Requires the `openstack` client (python-openstackclient) and `jq`.
+# Requires `jq` and the `openstack` client (python-openstackclient): either
+# installed locally (`brew install openstackclient`) or, failing that, run
+# ephemerally via `uvx` (no local install needed). Set $INFOMANIAK_OS_CMD to
+# override the runner.
 set -euo pipefail
 
 : "${INFOMANIAK:?INFOMANIAK (OpenStack password) must be set in the environment}"
@@ -19,8 +22,23 @@ export OS_CLIENT_CONFIG_FILE="${OS_CLIENT_CONFIG_FILE:-$_here/clouds.yaml}"
 export OS_CLOUD="${INFOMANIAK_CLOUD:-PCP-GYK2Y4A-dc3-a}"
 export OS_PASSWORD="$INFOMANIAK"
 
+# Resolve how to invoke the openstack client: a local install if present,
+# otherwise uvx (uv's ephemeral tool runner). uvx downloads the client once and
+# caches it, so only the first call is slow.
+if [[ -n "${INFOMANIAK_OS_CMD:-}" ]]; then
+  # shellcheck disable=SC2206
+  _os_cmd=($INFOMANIAK_OS_CMD)
+elif command -v openstack >/dev/null 2>&1; then
+  _os_cmd=(openstack)
+elif command -v uvx >/dev/null 2>&1; then
+  _os_cmd=(uvx --from python-openstackclient openstack)
+else
+  echo "need the 'openstack' client (brew install openstackclient) or 'uvx' (part of uv)" >&2
+  exit 1
+fi
+
 # os SUBCOMMAND...  -> run the openstack client with our auth/config.
-os() { openstack "$@"; }
+os() { "${_os_cmd[@]}" "$@"; }
 
 # server_id_by_name NAME  -> prints id (empty if not found)
 server_id_by_name() {
