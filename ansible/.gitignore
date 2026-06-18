@@ -1,3 +1,4 @@
 *.retry
 
 secrets.txt
+inventory/hosts.test

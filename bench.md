@@ -14,48 +14,51 @@ jitter probe — the two disagreeing is itself the headline result.
 
 ### Overview — all metrics, all machines
 
-| Metric | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) |
-|---|---|---|---|---|---|
-| Instance type | Hetzner CX33 (shared vCPU) | Hetzner CPX32 (shared vCPU) | Hetzner CCX23 (**dedicated vCPU**) | Infomaniak `a4-ram8-disk80-perf1` (shared, OpenStack) | Infomaniak VPS (4 vCPU/4 GB; **manual order — no create API**) |
-| CPU model | AMD EPYC-Rome (Zen 2) | AMD EPYC-Genoa (Zen 4) | AMD EPYC-Milan (Zen 3) | AMD EPYC-Rome (Zen 2) | **AMD EPYC-Genoa (Zen 4)** |
-| vCPUs / topology | 4 (1s × 4c × 1t) | 4 (1s × 4c × 1t) | 4 (1s × 2c × **2t, SMT**) | 4 (**2s × 2c** × 1t) | 4 (2s × 2c × 1t) |
-| Reported clock | ~2.45 GHz | ~2.40 GHz (2396 MHz) | ~2.40 GHz (2399.996 MHz) | **~2.00 GHz** (1996 MHz) | ~2.40 GHz (2396 MHz) |
-| BogoMIPS | 4890.8 | 4792.8 | 4799.99 | **3992.5** | 4792.8 |
-| RAM | 8 GB | 8 GB | 16 GB | 8 GB | **4 GB** |
-| Disk | 80 GB | 160 GB | 160 GB | 80 GB | 80 GB |
-| Virtualization | KVM full | KVM full | KVM full | KVM full | KVM full |
-| Gross / month (EU, incl. VAT) | **€10.10** (net €8.49) | €42.23 (net €35.49) | €102.33 (net €85.99) | **~€20.0 net** (ex VAT — see note) | **€10.80** (as ordered) |
-| Gross / hour (EU) | **€0.0162** | €0.0677 | €0.1640 | ~€0.0274 net | ~€0.0148 |
-| Included traffic | 22 TB | 22 TB EU / 2 TB sin | 22 TB EU / 2 TB US+sin | metered / fair-use | fair-use |
-| Price ratio (vs CX33) | 1× | 4.18× | **10.13×** | ~2.4× (net vs A net) | ~1.07× (vs A gross) |
-| `%steal` under 12s full load | **0.00** (every sample) | **0.00** (every sample) | **0.00** (every sample) | **0.04 avg — nonzero** (0.25 in 2/12) | **0.00** (every sample) |
-| Aggregate during load | ~99.4% usr, 0% idle | ~99.7% usr, ~0.02% idle | ~99.9% usr, 0% idle | ~99.8% usr, 0% idle | ~99.9% usr, 0% idle |
-| Cumulative steal counter moved? | **No** (0) | **No** (89 ticks) | **No** (0) | **Yes** (steal exposed) | exposed; ~nil (cpu0 +0–1) |
-| Wall-time lost to >200µs stalls | **2.9–4.0%** | **0.00%** | **0.00%** | **0.6–0.9%** | **0.02–0.03%** |
-| Stalls > 200µs | ~41–45 /s | **0** | **0** | ~3–9 /s | ~0–1 /s (5–8 total) |
-| Stalls > 1ms | ~8–12 /s | **0** | **0** | ~2 /s | 0–1 total |
-| Worst single stall | **5.7–7.9 ms** | 0.09–0.10 ms | 0.12–0.14 ms | **5.0–5.4 ms** | 0.95–1.12 ms |
-| Involuntary ctx switches | ~6.5 /s (65/10s) | ~4.9 /s (46–52/10s) | ~4.4 /s (41–46/10s) | ~7–8 /s (70–77/10s) | ~5 /s (49–51/10s) |
-| cpu0 steal ticks delta | **0** | **0** | **0** | **1** (nonzero) | 0–1 |
-| Single-core loop rate | ~2.2M/s (0.46µs median) | ~3.6M/s (~0.27µs mean) | ~3.55–3.65M/s (~0.27µs mean) | ~2.0–2.4M/s (~0.41–0.49µs mean) | **~4.3–4.4M/s** (~0.23µs mean) |
-| Throughput per €/mo (gross) | **~0.218M /s** | ~0.085M /s | ~0.035M /s | ~0.11M /s (net) | **~0.40M /s** |
+| Metric | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) | Machine F (Exoscale standard.large) |
+|---|---|---|---|---|---|---|
+| Instance type | Hetzner CX33 (shared vCPU) | Hetzner CPX32 (shared vCPU) | Hetzner CCX23 (**dedicated vCPU**) | Infomaniak `a4-ram8-disk80-perf1` (shared, OpenStack) | Infomaniak VPS (4 vCPU/4 GB; **manual order — no create API**) | Exoscale `standard.large` (shared vCPU; CloudStack/KVM) |
+| CPU model | AMD EPYC-Rome (Zen 2) | AMD EPYC-Genoa (Zen 4) | AMD EPYC-Milan (Zen 3) | AMD EPYC-Rome (Zen 2) | **AMD EPYC-Genoa (Zen 4)** | **Intel Xeon (Skylake) — only Intel box** |
+| vCPUs / topology | 4 (1s × 4c × 1t) | 4 (1s × 4c × 1t) | 4 (1s × 2c × **2t, SMT**) | 4 (**2s × 2c** × 1t) | 4 (2s × 2c × 1t) | 4 (1s × 4c × 1t) |
+| Reported clock | ~2.45 GHz | ~2.40 GHz (2396 MHz) | ~2.40 GHz (2399.996 MHz) | **~2.00 GHz** (1996 MHz) | ~2.40 GHz (2396 MHz) | ~2.20 GHz (2200 MHz) |
+| BogoMIPS | 4890.8 | 4792.8 | 4799.99 | **3992.5** | 4792.8 | 4400.0 |
+| RAM | 8 GB | 8 GB | 16 GB | 8 GB | **4 GB** | 8 GB |
+| Disk | 80 GB | 160 GB | 160 GB | 80 GB | 80 GB | 80 GB |
+| Virtualization | KVM full | KVM full | KVM full | KVM full | KVM full | KVM full |
+| Gross / month (EU, incl. VAT) | **€10.10** (net €8.49) | €42.23 (net €35.49) | €102.33 (net €85.99) | **~€20.0 net** (ex VAT — see note) | **€10.80** (as ordered) | **~€68.1 net** (ex VAT; IPv4 free — see note) |
+| Gross / hour (EU) | **€0.0162** | €0.0677 | €0.1640 | ~€0.0274 net | ~€0.0148 | ~€0.0933 net |
+| Included traffic | 22 TB | 22 TB EU / 2 TB sin | 22 TB EU / 2 TB US+sin | metered / fair-use | fair-use | metered (free egress tier) |
+| Price ratio (vs CX33) | 1× | 4.18× | **10.13×** | ~2.4× (net vs A net) | ~1.07× (vs A gross) | **~8.0× (net vs A net)** |
+| `%steal` under 12s full load | **0.00** (every sample) | **0.00** (every sample) | **0.00** (every sample) | **0.04 avg — nonzero** (0.25 in 2/12) | **0.00** (every sample) | **~0.02 avg — nonzero** (0.25 in 1/12) |
+| Aggregate during load | ~99.4% usr, 0% idle | ~99.7% usr, ~0.02% idle | ~99.9% usr, 0% idle | ~99.8% usr, 0% idle | ~99.9% usr, 0% idle | ~99.98% usr, 0% idle |
+| Cumulative steal counter moved? | **No** (0) | **No** (89 ticks) | **No** (0) | **Yes** (steal exposed) | exposed; ~nil (cpu0 +0–1) | **Yes** (10→173 ticks; steal exposed) |
+| Wall-time lost to >200µs stalls | **2.9–4.0%** | **0.00%** | **0.00%** | **0.6–0.9%** | **0.02–0.03%** | **0.00–0.01%** |
+| Stalls > 200µs | ~41–45 /s | **0** | **0** | ~3–9 /s | ~0–1 /s (5–8 total) | ~0 /s (0–2 total) |
+| Stalls > 1ms | ~8–12 /s | **0** | **0** | ~2 /s | 0–1 total | **0** |
+| Worst single stall | **5.7–7.9 ms** | 0.09–0.10 ms | 0.12–0.14 ms | **5.0–5.4 ms** | 0.95–1.12 ms | 0.14–0.35 ms |
+| Involuntary ctx switches | ~6.5 /s (65/10s) | ~4.9 /s (46–52/10s) | ~4.4 /s (41–46/10s) | ~7–8 /s (70–77/10s) | ~5 /s (49–51/10s) | ~4.3–5.4 /s (42–54/10s) |
+| cpu0 steal ticks delta | **0** | **0** | **0** | **1** (nonzero) | 0–1 | **0** |
+| Single-core loop rate | ~2.2M/s (0.46µs median) | ~3.6M/s (~0.27µs mean) | ~3.55–3.65M/s (~0.27µs mean) | ~2.0–2.4M/s (~0.41–0.49µs mean) | **~4.3–4.4M/s** (~0.23µs mean) | ~2.9–3.0M/s (~0.34µs mean) |
+| Throughput per €/mo (gross) | **~0.218M /s** | ~0.085M /s | ~0.035M /s | ~0.11M /s (net) | **~0.40M /s** | ~0.043M /s (net) |
 
 Per-test detail and interpretation follow below. (D and E are both Infomaniak but
 *different products*: D is Public Cloud / OpenStack — API-creatable, Zen 2; E is
-the VPS product — ordered by hand, Zen 4. They are not the same platform.)
+the VPS product — ordered by hand, Zen 4. They are not the same platform. F is
+Exoscale — the only **Intel** box and the only CloudStack-backed provider here;
+its numbers below are the post-provision run, which matched a pre-provision run
+on the bare image to within noise.)
 
 ### Test 0 — identity
 
-| | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) |
-|---|---|---|---|---|---|
-| Instance type | Hetzner CX33 | Hetzner CPX32 (user-stated) | Hetzner CCX23 (user-stated) — **dedicated vCPU** | Infomaniak `a4-ram8-disk80-perf1` (dc3-a) | Infomaniak VPS (4 vCPU/4 GB) |
-| Model name | AMD EPYC-Rome | AMD EPYC-Genoa (Zen 4 class) | AMD EPYC-Milan (Zen 3 class) | AMD EPYC-Rome (Zen 2 class) | AMD EPYC-Genoa (Zen 4 class) |
-| vCPUs | 4 (1s × 4c × 1t) | 4 (1s × 4c × 1t) | 4 (1s × 2c × **2t / SMT on**) | 4 (**2s × 2c × 1t**) | 4 (2s × 2c × 1t) |
-| Reported clock | ~2.45 GHz (fixed) | ~2.40 GHz (2396 MHz) | ~2.40 GHz (2399.996 MHz) | **~2.00 GHz** (1996.25 MHz) | ~2.40 GHz (2396.388 MHz) |
-| BogoMIPS | 4890.8 | 4792.8 | 4799.99 | **3992.5** | 4792.77 |
-| RAM | 8 GB | 8 GB | 16 GB | 8 GB (7.8 GiB) | **4 GB** (3.8 GiB) |
-| Disk | 80 GB | 160 GB | 160 GB | 80 GB | 80 GB |
-| Price / month (gross) | €10.10 | €42.23 | €102.33 | ~€20.0 (net, ex VAT) | €10.80 |
+| | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) | Machine F (Exoscale standard.large) |
+|---|---|---|---|---|---|---|
+| Instance type | Hetzner CX33 | Hetzner CPX32 (user-stated) | Hetzner CCX23 (user-stated) — **dedicated vCPU** | Infomaniak `a4-ram8-disk80-perf1` (dc3-a) | Infomaniak VPS (4 vCPU/4 GB) | Exoscale `standard.large` (ch-dk-2) |
+| Model name | AMD EPYC-Rome | AMD EPYC-Genoa (Zen 4 class) | AMD EPYC-Milan (Zen 3 class) | AMD EPYC-Rome (Zen 2 class) | AMD EPYC-Genoa (Zen 4 class) | **Intel Xeon (Skylake class)** |
+| vCPUs | 4 (1s × 4c × 1t) | 4 (1s × 4c × 1t) | 4 (1s × 2c × **2t / SMT on**) | 4 (**2s × 2c × 1t**) | 4 (2s × 2c × 1t) | 4 (1s × 4c × 1t) |
+| Reported clock | ~2.45 GHz (fixed) | ~2.40 GHz (2396 MHz) | ~2.40 GHz (2399.996 MHz) | **~2.00 GHz** (1996.25 MHz) | ~2.40 GHz (2396.388 MHz) | ~2.20 GHz (2200.000 MHz) |
+| BogoMIPS | 4890.8 | 4792.8 | 4799.99 | **3992.5** | 4792.77 | 4400.00 |
+| RAM | 8 GB | 8 GB | 16 GB | 8 GB (7.8 GiB) | **4 GB** (3.8 GiB) | 8 GB (7.7 GiB) |
+| Disk | 80 GB | 160 GB | 160 GB | 80 GB | 80 GB | 80 GB |
+| Price / month (gross) | €10.10 | €42.23 | €102.33 | ~€20.0 (net, ex VAT) | €10.80 | ~€68.1 (net, ex VAT) |
 
 ### Pricing (live from Hetzner Cloud API `/v1/pricing`)
 
@@ -63,12 +66,34 @@ Pulled 2026-06-16 via `GET /v1/pricing`. EUR, EU locations (fsn1 / nbg1 / hel1 �
 all priced identically); Singapore is dearer (see note). **All figures below are
 gross, incl. 19% VAT** (net shown in parentheses for reference).
 
-| | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) |
-|---|---|---|---|---|---|
-| Gross / month (incl. VAT) | **€10.10** (net €8.49) | €42.23 (net €35.49) | €102.33 (net €85.99) | **~€20.0 net** (no VAT in quote) | **€10.80** (as ordered) |
-| Gross / hour (incl. VAT) | **€0.0162** (net €0.0136) | €0.0677 (net €0.0569) | €0.1640 (net €0.1378) | ~€0.0274 net | ~€0.0148 |
-| Included traffic | 22 TB | 22 TB (EU) / 2 TB (sin) | 22 TB (EU) / 2 TB (US+sin) | metered / fair-use | fair-use |
-| Price ratio | 1× (baseline) | **4.18× more expensive** | **10.13× more expensive** | ~2.4× net (vs A net €8.49) | ~1.07× (vs A gross) |
+| | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) | Machine F (Exoscale standard.large) |
+|---|---|---|---|---|---|---|
+| Gross / month (incl. VAT) | **€10.10** (net €8.49) | €42.23 (net €35.49) | €102.33 (net €85.99) | **~€20.0 net** (no VAT in quote) | **€10.80** (as ordered) | **~€68.1 net** (ex VAT — see note) |
+| Gross / hour (incl. VAT) | **€0.0162** (net €0.0136) | €0.0677 (net €0.0569) | €0.1640 (net €0.1378) | ~€0.0274 net | ~€0.0148 | ~€0.0933 net |
+| Included traffic | 22 TB | 22 TB (EU) / 2 TB (sin) | 22 TB (EU) / 2 TB (US+sin) | metered / fair-use | fair-use | metered (free egress tier) |
+| Price ratio | 1× (baseline) | **4.18× more expensive** | **10.13× more expensive** | ~2.4× net (vs A net €8.49) | ~1.07× (vs A gross) | **~8.0× net (vs A net €8.49)** |
+
+#### Machine F — Exoscale pricing (pulled 2026-06-18)
+
+Exoscale bills per second in EUR **ex VAT** (a Swiss provider; like Infomaniak D,
+not directly comparable to the German-gross Hetzner figures — the per-euro
+comparison below uses *net* for all). The `standard.large` (4 vCPU / 8 GB) list
+rate is **€0.09333/h → ~€68.13/mo** (×730 h) from Exoscale's published price list;
+this is the compute rate, and Exoscale **includes the public IPv4 free** (unlike D,
+which adds ~€3/mo for it). The 80 GB root volume is local NVMe sized at create.
+
+| Component (for `standard.large`) | €/hour | €/month (×730h) |
+|---|---|---|
+| Compute — 4 vCPU + 8 GB RAM | 0.09333 | 68.13 |
+| Public IPv4 | included | 0.00 |
+| **Total** | **0.09333** | **~68.1** |
+
+Caveat: this is Exoscale's *list* price and may have moved since the last public
+adjustment; flat across all zones. At ~€68/mo net it lands in C's price tier
+(Hetzner's dedicated-vCPU box) despite being shared vCPU — Exoscale is the
+priciest *shared* box in the set by a wide margin. Note the clock: F runs at
+**~2.20 GHz**, between D's ~2.0 and the rest's ~2.4, on Intel Skylake silicon
+(every other box is AMD EPYC).
 
 #### Machine D — Infomaniak Public Cloud pricing (pulled 2026-06-18)
 
@@ -101,23 +126,23 @@ and Singapore €129.10/mo gross, both with only 2 TB included traffic.
 
 ### Test 1 — steal under full load
 
-| | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) |
-|---|---|---|---|---|---|
-| `%steal` under 12s full load | **0.00** (every sample) | **0.00** (every sample) | **0.00** (every sample) | **0.04 avg — nonzero** (0.25 in 2/12 samples) | **0.00** (every sample) |
-| Aggregate during load | ~99.4% usr, 0% idle | ~99.7% usr, ~0.02% idle | ~99.9% usr, 0% idle (~0.1% sys) | ~99.8% usr, 0% idle (~0.08% sys) | ~99.9% usr, 0% idle (~0.04% sys) |
-| Cumulative steal counter moved? | **No** (stayed 0) | **No** (stayed at 89 ticks) | **No** (stayed 0) | **Yes** — steal accrues (cpu0 +1 tick in Test 2) | exposed (58 ticks at boot); ~nil under load |
+| | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) | Machine F (Exoscale standard.large) |
+|---|---|---|---|---|---|---|
+| `%steal` under 12s full load | **0.00** (every sample) | **0.00** (every sample) | **0.00** (every sample) | **0.04 avg — nonzero** (0.25 in 2/12 samples) | **0.00** (every sample) | **~0.02 avg — nonzero** (0.25 in 1/12 samples) |
+| Aggregate during load | ~99.4% usr, 0% idle | ~99.7% usr, ~0.02% idle | ~99.9% usr, 0% idle (~0.1% sys) | ~99.8% usr, 0% idle (~0.08% sys) | ~99.9% usr, 0% idle (~0.04% sys) | ~99.98% usr, 0% idle |
+| Cumulative steal counter moved? | **No** (stayed 0) | **No** (stayed at 89 ticks) | **No** (stayed 0) | **Yes** — steal accrues (cpu0 +1 tick in Test 2) | exposed (58 ticks at boot); ~nil under load | **Yes** — counter advanced 10→173 across the session (steal exposed) |
 
 ### Test 2 — single-core jitter (10s, pinned to vCPU0)
 
-| Metric | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) |
-|---|---|---|---|---|---|
-| Wall-time lost to >200µs stalls | **2.9–4.0%** | **0.00%** (both runs) | **0.00%** (both runs) | **0.60–0.87%** (both runs) | **0.02–0.03%** (both runs) |
-| Stalls > 200µs | ~41–45 /s | **0 /s** (zero total) | **0 /s** (zero total) | ~3–9 /s (27 and 87 total) | ~0–1 /s (8 and 5 total) |
-| Stalls > 1ms | ~8–12 /s | **0 /s** (zero total) | **0 /s** (zero total) | ~2 /s (18 total each run) | 0–1 total (1 and 0) |
-| Worst single stall | **5.7–7.9 ms** | **0.09–0.10 ms** | **0.12–0.14 ms** | **5.02–5.41 ms** | 0.95–1.12 ms |
-| Involuntary ctx switches | ~6.5 /s (65 in 10s) | ~4.9 /s (46–52 in 10s) | ~4.4 /s (41–46 in 10s) | ~7–8 /s (70–77 in 10s) | ~5 /s (49–51 in 10s) |
-| cpu0 steal ticks delta | **0** | **0** | **0** | **1** (nonzero) | 0–1 |
-| Single-core loop rate | 0.46 µs median gap (~2.2M/s inv.) | ~3.6M iters/s (mean gap ~0.27µs) | ~3.55–3.65M iters/s (mean gap ~0.27–0.28µs) | ~2.0–2.4M iters/s (mean gap ~0.41–0.49µs) | **~4.3–4.4M iters/s** (mean gap ~0.23µs) |
+| Metric | Machine A (CX33) | Machine B (CPX32) | Machine C (CCX23) | Machine D (Infomaniak PubCloud) | Machine E (Infomaniak VPS) | Machine F (Exoscale standard.large) |
+|---|---|---|---|---|---|---|
+| Wall-time lost to >200µs stalls | **2.9–4.0%** | **0.00%** (both runs) | **0.00%** (both runs) | **0.60–0.87%** (both runs) | **0.02–0.03%** (both runs) | **0.00–0.01%** (both runs) |
+| Stalls > 200µs | ~41–45 /s | **0 /s** (zero total) | **0 /s** (zero total) | ~3–9 /s (27 and 87 total) | ~0–1 /s (8 and 5 total) | ~0 /s (0 and 2 total) |
+| Stalls > 1ms | ~8–12 /s | **0 /s** (zero total) | **0 /s** (zero total) | ~2 /s (18 total each run) | 0–1 total (1 and 0) | **0 /s** (zero total) |
+| Worst single stall | **5.7–7.9 ms** | **0.09–0.10 ms** | **0.12–0.14 ms** | **5.02–5.41 ms** | 0.95–1.12 ms | 0.14–0.35 ms |
+| Involuntary ctx switches | ~6.5 /s (65 in 10s) | ~4.9 /s (46–52 in 10s) | ~4.4 /s (41–46 in 10s) | ~7–8 /s (70–77 in 10s) | ~5 /s (49–51 in 10s) | ~4.3–5.4 /s (43 and 54 in 10s) |
+| cpu0 steal ticks delta | **0** | **0** | **0** | **1** (nonzero) | 0–1 | **0** |
+| Single-core loop rate | 0.46 µs median gap (~2.2M/s inv.) | ~3.6M iters/s (mean gap ~0.27µs) | ~3.55–3.65M iters/s (mean gap ~0.27–0.28µs) | ~2.0–2.4M iters/s (mean gap ~0.41–0.49µs) | **~4.3–4.4M iters/s** (mean gap ~0.23µs) | ~2.9–3.0M iters/s (mean gap ~0.34µs) |
 
 (Machine A ranges come from two runs: 12s and 10s. Machine B and C each from two
 10s runs. Single-core loop rate: B and C ~3.6M iters/s **measured** (mean gap
@@ -396,14 +421,85 @@ Ubuntu 26.04, €10.80/mo as ordered.
   window; its 4 GB RAM also makes it not a like-for-like swap for the 8–16 GB
   boxes on memory-bound work.
 
+## Comparison — Machine F (Exoscale standard.large)
+
+Machine F is the **only Intel box** and the **only CloudStack-backed provider**
+in the set (Exoscale runs CloudStack/KVM; A–C are Hetzner KVM, D is OpenStack/KVM,
+E is Infomaniak's VPS). Provider Exoscale, zone ch-dk-2, `standard.large`
+(4 vCPU / 8 GB), Ubuntu 26.04, run date 2026-06-18. It was benchmarked **twice** —
+once on the bare image over the public IP, once after a full ansible provision
+over the tailnet — and the two runs matched to within noise, so provisioning has
+no effect on this suite (numbers below are the post-provision run).
+
+- **Identity diff — the lone Intel chip.** F is an **Intel Xeon (Skylake class)**
+  @ ~2.20 GHz (BogoMIPS 4400), where *every other box is AMD EPYC* (A/D Zen 2,
+  C Zen 3, B/E Zen 4). Topology is **1 socket × 4 cores × 1 thread**, matching A
+  and B (D was 2×2×1, C was 1×2×2 SMT, E was 2×2×1). Clock sits between D's ~2.0
+  and the rest's ~2.4 GHz. RAM 8 GB and disk 80 GB match A and D. KVM full-virt
+  guest like all of them.
+
+- **Steal accounting — exposed and honest, like D (and unlike the Hetzner boxes).**
+  `%steal` read 0.00 on most samples but showed **0.25 in 1 of 12 load samples**,
+  and the **cumulative steal counter advanced (10 → 173 ticks)** across the
+  session. So F joins **D as the second box where `%steal` is trustworthy** — the
+  doc's central "don't trust `%steal`" caveat is a Hetzner-specific artifact, not
+  a universal one. (The cpu0-pinned jitter probe itself saw a 0-tick delta, i.e.
+  the descheduling that moved the counter happened off the probe's core.)
+
+- **Jitter — clean, B/C/E class.** F lost **0.00–0.01%** of wall time to >200µs
+  stalls across both runs (vs A's 2.9–4.0%, D's 0.6–0.9%, and B/C's literal 0).
+  **Zero** stalls over 1 ms; worst single stall **0.14–0.35 ms** — ~20–40× tighter
+  than A's and D's multi-ms spikes, on par with B (~0.10), C (~0.13), and E
+  (~1 ms). Involuntary ctx switches ~4.3–5.4/s, the low end of the set. So despite
+  being a *shared*-vCPU box, F's latency tail looks like the clean/dedicated
+  cohort, not like its shared-vCPU peers A and D.
+
+- **Single-core speed — middle of the pack.** F ran the loop at **~2.9–3.0M
+  iters/s** (mean gap ~0.34µs): ~**35% faster than the Zen 2 boxes** (A/D ~2.2M)
+  but ~**20% slower than Zen 3/4** (B/C ~3.6M) and ~33% slower than E (~4.35M).
+  Reasonable for an older Skylake core at 2.2 GHz, but it is the slowest of the
+  "fast tail" group. (Crude loop, directional only.)
+
+- **Price / performance — the worst value of any *shared* box.** At **~€68.1/mo
+  net** (€0.09333/h, ex VAT; **IPv4 included free**) F delivers ~**0.043M iters/s
+  per net €/mo** — essentially tied with the dedicated CCX23 (C, ~0.042M) at the
+  bottom of the table, and ~6× worse value than A (~0.26M net) and ~2.5× worse
+  than D (~0.11M net). Exoscale charges dedicated-tier money for a shared-vCPU
+  box; what you get for it is a clean tail and honest steal, but not cheap compute.
+
+- **Overall verdict:** F is a **well-behaved shared box with a surprising,
+  dedicated-class latency tail and trustworthy steal accounting**, let down by a
+  middling Skylake core and a steep price. It beats A and D decisively on jitter
+  (clean vs multi-ms spikes) and beats the Zen 2 boxes on raw single-core speed,
+  but it can't touch B/C/E on throughput and is the priciest shared instance here
+  by far. Pick F when you specifically want Intel silicon, an honest `%steal`, and
+  a clean tail and the budget isn't the constraint; for value, A/E dominate it,
+  and for a guaranteed tail at a similar price C gives you dedicated vCPUs.
+
+  Ranking refresh across all **six**:
+  - **Best single-core compute:** **E** (~4.35M/s) > **B ≈ C** (~3.6M/s) >
+    **F** (~2.95M/s) > **A ≈ D** (~2.2M/s).
+  - **Lowest latency tail:** **B ≈ C** (literal 0) ≈ **F** (≤0.35 ms) ≈ **E**
+    (one ~1 ms blip) ≫ **D** (~5 ms spikes, honest steal) ≫ **A** (3–4% lost).
+  - **Best throughput-per-euro:** **E** (~0.40M) ≫ **A** (~0.218M gross) ≫ **D ≈
+    B** (~0.11M / ~0.085M) ≫ **C ≈ F** (~0.042M / ~0.043M, net).
+  - **`%steal` trustworthy:** **D** and **F** (counter moves) — *not* A/B/C.
+  - **Best for fleet automation:** **A/B/C** (Hetzner API) ≈ **D** (OpenStack) ≈
+    **F** (Exoscale `exo` CLI / API) ≫ **E** (manual order only).
+
+  Caveat: same as all the above — point-in-time, otherwise-idle VM, short runs.
+  F's two runs (pre/post-provision) agreed, which adds a little confidence, but
+  shared-tenant contention is bursty and this is still a single sitting. The
+  €68/mo figure is Exoscale's list price (ex VAT) and may have shifted.
+
 ---
 
 ## How to run this on another machine
 
 You are Claude running on a **new machine**. Run every command in the
 "Procedure" section below, in order, then **add the next free Machine column**
-(the Results section above already has A–E, so add **Machine F**) to each results
-table at the top, and add a matching **`## Comparison — Machine F`** subsection up
+(the Results section above already has A–F, so add **Machine G**) to each results
+table at the top, and add a matching **`## Comparison — Machine G`** subsection up
 in the Results area: for each metric, state which machine is better and by how
 much, and call out anything qualitatively different (e.g. steal accounting
 working on one box but not the other). Keep all existing machines' numbers
