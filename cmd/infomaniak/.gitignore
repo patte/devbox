@@ -1,0 +1,4 @@
+# Project-scoped OpenStack config (account/project identifiers) — not committed.
+# See README.md for how to download it for your own project.
+clouds.yaml
+clouds.yml
