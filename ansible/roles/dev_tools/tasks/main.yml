@@ -23,6 +23,44 @@
       tags:
         - apt
 
+    # --- GitHub CLI (official apt repo) ----------------------------------
+    - name: Ensure apt keyrings directory exists
+      become: true
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+      tags:
+        - gh
+
+    - name: Add GitHub CLI apt signing key
+      become: true
+      ansible.builtin.get_url:
+        url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+        dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        mode: "0644"
+      tags:
+        - gh
+
+    - name: Add GitHub CLI apt repository
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/github-cli.list
+        mode: "0644"
+        content: |
+          deb [arch={{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main
+      tags:
+        - gh
+
+    - name: Install GitHub CLI
+      become: true
+      ansible.builtin.apt:
+        name: gh
+        state: present
+        update_cache: yes
+      tags:
+        - gh
+
     - name: Install podman and compose
       become: true
       ansible.builtin.apt:
@@ -58,41 +96,79 @@
       tags:
         - podman
 
-    # --- nvm + node ------------------------------------------------------
-    - name: Check whether nvm is installed
+    # --- fnm + node + pnpm -----------------------------------------------
+    - name: Check whether fnm is installed
       become: true
       become_user: "{{ dev_user }}"
       ansible.builtin.stat:
-        path: "/home/{{ dev_user }}/.nvm/nvm.sh"
-      register: nvm_installed
+        path: "/home/{{ dev_user }}/.local/bin/fnm"
+      register: fnm_installed
       tags:
-        - nvm
+        - fnm
 
-    - name: Install nvm
+    - name: Install fnm
       become: true
       become_user: "{{ dev_user }}"
+      # --install-dir ~/.local/bin: drops the fnm binary on the PATH we already
+      # manage, so no extra PATH entry is needed. --skip-shell: we wire up
+      # `fnm env` ourselves in the shell-init blocks below.
       ansible.builtin.shell:
-        cmd: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/{{ nvm_version }}/install.sh | bash"
+        cmd: "set -o pipefail; curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir \"$HOME/.local/bin\" --skip-shell"
         executable: /bin/bash
-      when: not nvm_installed.stat.exists
+      when: not fnm_installed.stat.exists
       tags:
-        - nvm
+        - fnm
 
-    - name: Install Node.js via nvm
+    - name: Install Node.js via fnm + enable pnpm (corepack)
       become: true
       become_user: "{{ dev_user }}"
+      # fnm `use`/`default` only accept a concrete version (not selectors like
+      # --lts), and fnm install is idempotent (exit 0, printing the concrete
+      # version every run + a "Version already installed" note when present). So
+      # we install, parse the concrete version fnm reports, and pin it as the
+      # default. pnpm ships with node via corepack, so no separate download.
       ansible.builtin.shell:
         cmd: |
-          export NVM_DIR="$HOME/.nvm"
-          . "$NVM_DIR/nvm.sh"
-          nvm install {{ node_version }}
-          nvm alias default {{ node_version }}
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          out="$(fnm install {{ node_version }} 2>&1)"; echo "$out"
+          ver="$(printf '%s\n' "$out" | grep -oE -m1 'v[0-9]+\.[0-9]+\.[0-9]+')"
+          fnm default "$ver"
+          corepack enable pnpm
         executable: /bin/bash
       register: node_install
-      changed_when: "'is already installed' not in node_install.stdout"
+      # "Installing Node vX" prints every run; an install only actually changed
+      # something when fnm did NOT report the version as already present.
+      changed_when: "'Version already installed' not in node_install.stdout"
       tags:
-        - nvm
+        - fnm
         - node
+        - pnpm
+
+    # --- uv (Python package/project manager) -----------------------------
+    - name: Check whether uv is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.stat:
+        path: "/home/{{ dev_user }}/.local/bin/uv"
+      register: uv_installed
+      tags:
+        - uv
+
+    - name: Install uv
+      become: true
+      become_user: "{{ dev_user }}"
+      # Installs to ~/.local/bin (already on PATH). INSTALLER_NO_MODIFY_PATH: we
+      # manage PATH ourselves, so the installer shouldn't touch the shell rc.
+      ansible.builtin.shell:
+        cmd: "set -o pipefail; curl -LsSf https://astral.sh/uv/install.sh | sh"
+        executable: /bin/bash
+      environment:
+        INSTALLER_NO_MODIFY_PATH: "1"
+      when: not uv_installed.stat.exists
+      tags:
+        - uv
 
     # --- Claude Code (native installer) ----------------------------------
     - name: Check whether Claude Code is installed
@@ -142,11 +218,12 @@
         - atuin
 
     # --- Shell init ------------------------------------------------------
-    # Two blocks: the PATH/nvm block goes at the TOP of .bashrc, before Ubuntu's
-    # `case $- in *i*) ;; *) return` guard, so node/npm/claude/atuin are available
-    # to non-interactive shells too (e.g. `ssh host 'node ...'`). atuin's shell
-    # hooks only make sense interactively, so they stay at the bottom (guarded).
-    - name: Put nvm + tool PATH at the top of .bashrc (works non-interactively)
+    # Two blocks: the PATH/fnm block goes at the TOP of .bashrc, before Ubuntu's
+    # `case $- in *i*) ;; *) return` guard, so node/npm/pnpm/claude/atuin are
+    # available to non-interactive shells too (e.g. `ssh host 'node ...'`).
+    # atuin's shell hooks only make sense interactively, so they stay at the
+    # bottom (guarded).
+    - name: Put fnm + tool PATH at the top of .bashrc (works non-interactively)
       become: true
       become_user: "{{ dev_user }}"
       ansible.builtin.blockinfile:
@@ -156,10 +233,8 @@
         marker: "# {mark} ANSIBLE MANAGED: dev-tools path"
         insertbefore: BOF
         block: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
           export PATH="$HOME/.local/bin:$HOME/.atuin/bin:$PATH"
+          command -v fnm >/dev/null 2>&1 && eval "$(fnm env --shell bash)"
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
           export PGHOST=127.0.0.1
           export PGUSER=postgres
@@ -215,7 +290,7 @@
       tags:
         - zsh
 
-    - name: Configure ~/.zshenv (PATH/nvm — sourced for all zsh invocations)
+    - name: Configure ~/.zshenv (PATH/fnm — sourced for all zsh invocations)
       become: true
       become_user: "{{ dev_user }}"
       ansible.builtin.blockinfile:
@@ -224,9 +299,8 @@
         mode: "0644"
         marker: "# {mark} ANSIBLE MANAGED: dev-tools path"
         block: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           export PATH="$HOME/.local/bin:$HOME/.atuin/bin:$PATH"
+          command -v fnm >/dev/null 2>&1 && eval "$(fnm env --shell zsh)"
           [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
           export PGHOST=127.0.0.1
           export PGUSER=postgres

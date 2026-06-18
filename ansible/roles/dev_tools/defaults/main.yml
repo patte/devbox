@@ -1,9 +1,7 @@
 ---
-# nvm release tag to install (https://github.com/nvm-sh/nvm/releases).
-nvm_version: "v0.40.1"
-
-# Node version for `nvm install` / `nvm alias default` (e.g. "lts/*", "22", "20.11.0").
-node_version: "lts/*"
+# Node version selector passed to fnm (https://github.com/Schniz/fnm).
+# Examples: "--lts" (latest LTS), "22", "20.11.0", "lts/hydrogen".
+node_version: "--lts"
 
 # Claude Code, via the recommended native installer (installs to ~/.local/bin
 install_claude_code: true

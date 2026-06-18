@@ -1,7 +1,7 @@
 # coder — Ansible provisioning for remote coding environments
 
 Provisions Ubuntu hosts into carefree playfields for AI agents: hardened base
-system, optional Tailscale, and a developer toolchain (nvm + Node, Claude Code,
+system, optional Tailscale, and a developer toolchain (fnm + Node + pnpm, uv, Claude Code,
 Rust, atuin, btop, podman + compose, zsh + starship). Your laptop stays "just a
 terminal" — you SSH in over tailscale.
 
@@ -26,7 +26,7 @@ ansible/
 │   ├── create_user/            # makes the dev user (+ passwordless sudo)
 │   ├── system_setup/           # ssh hardening, ufw, unattended-upgrades, ...
 │   ├── tailscale/              # optional per host (tailscale_enabled); waits for signing
-│   ├── dev_tools/              # node, Claude Code, Rust, atuin, btop, podman+compose, zsh+starship
+│   ├── dev_tools/              # fnm+node+pnpm, uv, gh, Claude Code, Rust, atuin, btop, podman+compose, zsh+starship
 │   └── ssh_tailscale_only/     # close public SSH, allow only over tailscale (runs last)
 └── scripts/
     ├── setup.sh                # install ansible collections (run once)
@@ -115,7 +115,7 @@ Set these as host vars in `inventory/hosts`:
 - **SSH is tailnet-only** after provisioning: UFW allows port 22 only on
   `tailscale0` and drops the public allow rule (applied last, so the in-flight
   run isn't cut off). Public SSH is refused thereafter.
-- **Shell:** zsh + [starship](https://starship.rs) (no plugin framework); nvm and
+- **Shell:** zsh + [starship](https://starship.rs) (no plugin framework); fnm and
   PATH load from `.zshenv`/top-of-`.bashrc` so tools resolve non-interactively.
 - Dropped from the reference `system_setup`: Grafana Alloy monitoring and the
   extra (jonas) SSH key — not relevant here.
