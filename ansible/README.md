@@ -1,4 +1,4 @@
-# coder — Ansible provisioning for remote coding environments
+# devbox — Ansible provisioning for remote coding environments
 
 Provisions Ubuntu hosts into carefree playfields for AI agents: hardened base
 system, optional Tailscale, and a developer toolchain (fnm + Node + pnpm, uv, Claude Code,
@@ -129,8 +129,8 @@ Helper scripts (Hetzner Cloud API, token from `HCLOUD_TOKEN`) live in
 
 ```bash
 export HCLOUD_TOKEN="…"
-cmd/hetzner/ensure-key.sh coder ~/.ssh/id_ed25519.pub   # register a key, prints its name
-HCLOUD_SSH_KEYS=coder cmd/hetzner/create.sh box1        # cx33 / ubuntu-26.04 / nbg1 by default
+cmd/hetzner/ensure-key.sh devbox ~/.ssh/id_ed25519.pub   # register a key, prints its name
+HCLOUD_SSH_KEYS=devbox cmd/hetzner/create.sh box1        # cx33 / ubuntu-26.04 / nbg1 by default
 cmd/hetzner/list.sh
 cmd/hetzner/delete.sh box1
 ```

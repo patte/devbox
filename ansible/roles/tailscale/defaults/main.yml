@@ -1,7 +1,7 @@
 ---
 # Tags applied to the node when it joins the tailnet. These must exist in your
 # tailnet ACLs and the OAuth client must be allowed to mint keys for them.
-tailscale_tags: ["tag:coder"]
+tailscale_tags: ["tag:devbox"]
 
 # tailscale_oauth_client_id / tailscale_oauth_secret come from the vault
 # (see inventory/group_vars/vault.example.yml).

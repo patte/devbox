@@ -26,12 +26,12 @@ export EXOSCALE_ZONE="${EXOSCALE_ZONE:-ch-dk-2}"
 # only override one). The dir + file are mode 600 and removed when the script
 # exits, so the secret never persists. Viper infers the format from the .toml
 # extension, hence the fixed filename inside a temp dir.
-_exo_cfgdir="$(mktemp -d -t coder-exoscale-cfg.XXXXXX)"
+_exo_cfgdir="$(mktemp -d -t devbox-exoscale-cfg.XXXXXX)"
 chmod 700 "$_exo_cfgdir"
 _exo_cfg="$_exo_cfgdir/exoscale.toml"
 trap 'rm -rf "$_exo_cfgdir"' EXIT
 ( umask 077
-  printf 'defaultaccount = "coder"\ndefaultzone = "%s"\n[[accounts]]\nname = "coder"\nkey = "%s"\nsecret = "%s"\ndefaultZone = "%s"\n' \
+  printf 'defaultaccount = "devbox"\ndefaultzone = "%s"\n[[accounts]]\nname = "devbox"\nkey = "%s"\nsecret = "%s"\ndefaultZone = "%s"\n' \
     "$EXOSCALE_ZONE" "$EXOSCALE_KEY" "$EXOSCALE_SECRET" "$EXOSCALE_ZONE" >"$_exo_cfg" )
 export EXOSCALE_CONFIG="$_exo_cfg"
 
@@ -62,7 +62,7 @@ ensure_sg() {
   if exo compute security-group show "$name" >/dev/null 2>&1; then echo "$name"; return; fi
   echo "creating security group '$name' (ssh + tailscale + icmp)..." >&2
   exo compute security-group create "$name" \
-    --description "coder dev boxes: ssh + tailscale + icmp" >/dev/null
+    --description "devbox dev boxes: ssh + tailscale + icmp" >/dev/null
   # SSH (tcp/22) from anywhere, v4 + v6.
   exo compute security-group rule add "$name" --flow ingress \
     --protocol tcp --port 22 --network 0.0.0.0/0 >/dev/null

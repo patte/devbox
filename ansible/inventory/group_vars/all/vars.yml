@@ -8,7 +8,7 @@ dev_user: patte
 tailscale_enabled: true
 
 # Tags applied when joining the tailnet (must exist in your tailnet ACLs).
-tailscale_tags: ["tag:coder"]
+tailscale_tags: ["tag:devbox"]
 
 
 # Extra SSH keys for the dev user (github.com/patte.keys is always added).

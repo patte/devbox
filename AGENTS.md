@@ -13,15 +13,15 @@ Notes for AI agents working in this repo. Keep short; append things future-you w
 ## Connecting to test boxes (SSH key)
 - The operator's real key (`github.com/patte.keys`) is a Secretive / Touch-ID key — unusable headless.
 - So use a throwaway key for the session:
-  1. `ssh-keygen -t ed25519 -N "" -f ~/.ssh/coder_test_ed25519`
-  2. register on Hetzner (from repo root): `HCLOUD_TOKEN=$HETZNER_API_KEY cmd/hetzner/ensure-key.sh coder-test ~/.ssh/coder_test_ed25519.pub`
-  3. inject into the dev user for the run via extra-vars file `/tmp/coder-extra.yml`:
-     `additional_ssh_keys: [{key: "<pubkey>", comment: coder-test}]`, passed with `-e @/tmp/coder-extra.yml`
+  1. `ssh-keygen -t ed25519 -N "" -f ~/.ssh/devbox_test_ed25519`
+  2. register on Hetzner (from repo root): `HCLOUD_TOKEN=$HETZNER_API_KEY cmd/hetzner/ensure-key.sh devbox-test ~/.ssh/devbox_test_ed25519.pub`
+  3. inject into the dev user for the run via extra-vars file `/tmp/devbox-extra.yml`:
+     `additional_ssh_keys: [{key: "<pubkey>", comment: devbox-test}]`, passed with `-e @/tmp/devbox-extra.yml`
      (only needed on `bootstrap.sh`; create_user + system_setup install it).
 - Test host lives in `ansible/inventory/hosts.test` (sets the key + recycled-IP SSH flags). Use `-i inventory/hosts.test`. On the first run point `ansible_host` at the public IP; after the SSH lockdown switch it to the box's tailscale IP/name to keep iterating.
 - SSH flags to avoid recycled-IP host-key errors:
   `-o IdentitiesOnly=yes -o IdentityAgent=none -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no`
-- **Clean up at end of session:** delete `~/.ssh/coder_test_ed25519*`, remove the key from Hetzner, and from the box (or just delete the box).
+- **Clean up at end of session:** delete `~/.ssh/devbox_test_ed25519*`, remove the key from Hetzner, and from the box (or just delete the box).
 
 ## Hetzner (cmd/hetzner/)
 - Attach SSH keys by **id**, not name (attach-by-name silently does not inject the key).
@@ -31,7 +31,7 @@ Notes for AI agents working in this repo. Keep short; append things future-you w
 - `scripts/bootstrap.sh` (as root, once) creates the dev user; then `scripts/provision.sh` (as the dev user) for everything, and every future run.
 - **Tailnet lock is ON**: a freshly joined node has no connectivity/DNS until the operator signs it in the Tailscale admin console. The tailscale role polls until that happens — ask the operator to sign when a run is waiting there.
 - After provisioning, UFW allows SSH **only over tailscale0**; public SSH is closed. Reach the box via its tailscale name afterwards (this Mac is on the tailnet; CLI at `/Applications/Tailscale.app/Contents/MacOS/Tailscale`). So set `ansible_host` to the tailscale name/IP for re-runs.
-- Nodes get `tag:coder`. The tailnet ACL must grant the operator's devices access to it, else the node isn't even a visible peer (`tailscale ping` → "no matching peer"). Needs a grant like `dst: ["tag:coder:22"]` from `autogroup:member` (operator's devices). Without it the locked-down box is unreachable.
+- Nodes get `tag:devbox`. The tailnet ACL must grant the operator's devices access to it, else the node isn't even a visible peer (`tailscale ping` → "no matching peer"). Needs a grant like `dst: ["tag:devbox:22"]` from `autogroup:member` (operator's devices). Without it the locked-down box is unreachable.
 
 ## Ubuntu 26.04 gotchas
 - sudo-rs: ansible `become` can't read its password prompt → the dev user gets passwordless sudo.

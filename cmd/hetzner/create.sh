@@ -57,12 +57,12 @@ done
 [[ -n "$ip" ]] || { echo "could not resolve IP for $NAME" >&2; exit 1; }
 echo "ip: $ip" >&2
 
-# Wait for SSH to accept connections. Use CODER_SSH_KEY (a passphrase-less key)
+# Wait for SSH to accept connections. Use DEVBOX_SSH_KEY (a passphrase-less key)
 # so the check works headless; restrict to that key only to avoid agent keys
 # that may require a passphrase or a hardware-token touch.
 key_opt=()
-if [[ -n "${CODER_SSH_KEY:-}" ]]; then
-  key_opt=(-i "$CODER_SSH_KEY" -o IdentitiesOnly=yes -o IdentityAgent=none)
+if [[ -n "${DEVBOX_SSH_KEY:-}" ]]; then
+  key_opt=(-i "$DEVBOX_SSH_KEY" -o IdentitiesOnly=yes -o IdentityAgent=none)
 fi
 echo "waiting for ssh on $ip ..." >&2
 for _ in $(seq 1 60); do

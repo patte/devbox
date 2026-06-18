@@ -62,7 +62,7 @@ ensure_sg() {
   if os security group show "$name" >/dev/null 2>&1; then echo "$name"; return; fi
   echo "creating security group '$name' (ssh + tailscale + icmp)..." >&2
   os security group create "$name" \
-    --description "coder dev boxes: ssh + tailscale + icmp" >/dev/null
+    --description "devbox dev boxes: ssh + tailscale + icmp" >/dev/null
   os security group rule create --ingress --protocol tcp --dst-port 22 \
     --ethertype IPv4 --remote-ip 0.0.0.0/0 "$name" >/dev/null
   os security group rule create --ingress --protocol tcp --dst-port 22 \

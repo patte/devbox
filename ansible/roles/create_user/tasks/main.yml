@@ -26,7 +26,7 @@
     # tailscale-fronted dev sandbox. Drop this task to require a sudo password.
     - name: Allow passwordless sudo for the dev user
       ansible.builtin.copy:
-        dest: "/etc/sudoers.d/90-coder-{{ dev_user }}"
+        dest: "/etc/sudoers.d/90-devbox-{{ dev_user }}"
         mode: "0440"
         content: "{{ dev_user }} ALL=(ALL) NOPASSWD:ALL\n"
         validate: "visudo -cf %s"

@@ -27,15 +27,15 @@ set -a; source ../../ansible/secrets.txt; set +a   # exports $EXOSCALE_KEY/$EXOS
 ./list.sh                                  # list instances in the zone (or: ./list.sh all)
 ./create.sh box1                           # create + wait for SSH, prints IPv4
 ./delete.sh box1                           # delete by name (or id), scoped to the zone
-./ensure-key.sh coder ~/.ssh/id_ed25519.pub  # register an SSH key (optional)
+./ensure-key.sh devbox ~/.ssh/id_ed25519.pub  # register an SSH key (optional)
 ```
 
 `create.sh NAME [TYPE] [TEMPLATE] [DISK_GB] [PUBKEY_FILE]` defaults to a
 `standard.large` type (4 vCPU / 8 GB, ~Hetzner cx33 class), the
 `Linux Ubuntu 26.04 LTS 64-bit` template, an 80 GB disk, and the pubkey
-(default `${CODER_SSH_KEY}.pub`, else `~/.ssh/id_ed25519.pub`) injected into
+(default `${DEVBOX_SSH_KEY}.pub`, else `~/.ssh/id_ed25519.pub`) injected into
 `root` via cloud-init so the root-based ansible bootstrap works. It also ensures
-a `coder` security group (see below) and attaches it.
+a `devbox` security group (see below) and attaches it.
 
 ## Notes
 
@@ -45,7 +45,7 @@ a `coder` security group (see below) and attaches it.
   act on a box in another zone.
 - **Firewall:** Exoscale's `default` security group does not open SSH from the
   internet, so a fresh box is otherwise unreachable. `create.sh` ensures a
-  `coder` security group that opens SSH (22/tcp, v4+v6), Tailscale (41641/udp),
+  `devbox` security group that opens SSH (22/tcp, v4+v6), Tailscale (41641/udp),
   and ICMP echo from anywhere, with open egress, and attaches it. The account's
   existing groups are left untouched. The host's own UFW (`system_setup` role)
   and `ssh_tailscale_only` are the inner layer that actually restricts SSH to the

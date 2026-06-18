@@ -42,16 +42,16 @@ set -a; source ../../ansible/secrets.txt; set +a   # exports $INFOMANIAK
 ./list.sh                                  # list servers
 ./create.sh box1                           # create + wait for SSH, prints IPv4
 ./delete.sh box1                           # delete by name (or id)
-./ensure-key.sh coder ~/.ssh/id_ed25519.pub  # register a Nova keypair (optional)
+./ensure-key.sh devbox ~/.ssh/id_ed25519.pub  # register a Nova keypair (optional)
 ```
 
 `create.sh NAME [FLAVOR] [IMAGE] [NETWORK] [PUBKEY_FILE]` defaults to a
 `a4-ram8-disk80-perf1` flavor (4 vCPU / 8 GB / 80 GB, ~Hetzner cx33), the
 `Ubuntu 26.04 LTS Resolute Raccoon` image, and the shared `ext-net1` network
 (which hands out a routable public IPv4 — no floating IP needed). The pubkey
-(default `${CODER_SSH_KEY}.pub`, else `~/.ssh/id_ed25519.pub`) is injected into
+(default `${DEVBOX_SSH_KEY}.pub`, else `~/.ssh/id_ed25519.pub`) is injected into
 `root` via cloud-init so the root-based ansible bootstrap works. It also
-ensures a `coder` security group (see below) and attaches it.
+ensures a `devbox` security group (see below) and attaches it.
 
 ## Notes
 
@@ -59,7 +59,7 @@ ensures a `coder` security group (see below) and attaches it.
   `INFOMANIAK_CLOUD=PCP-XXXXXXX-dc4-a` (the cloud names come from `clouds.yaml`).
 - **Firewall:** the project's `default` security group only allows ingress from
   its own members, so a fresh box is otherwise unreachable. `create.sh` ensures
-  a `coder` security group that opens SSH (22/tcp), Tailscale (41641/udp), and
+  a `devbox` security group that opens SSH (22/tcp), Tailscale (41641/udp), and
   ICMP from anywhere, with open egress, and attaches it. The host's own UFW
   (`system_setup` role) and `ssh_tailscale_only` are the inner layer that
   actually restricts SSH to the tailnet after provisioning.
