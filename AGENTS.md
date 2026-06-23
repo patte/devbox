@@ -23,6 +23,10 @@ Notes for AI agents working in this repo. Keep short; append things future-you w
   `-o IdentitiesOnly=yes -o IdentityAgent=none -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no`
 - **Clean up at end of session:** delete `~/.ssh/devbox_test_ed25519*`, remove the key from Hetzner, and from the box (or just delete the box).
 
+### Persistent key (do NOT delete)
+Instead of creating a new key you can just use ~/.ssh/id_ed25519.pub It's without passkey, so it can be used headless. Add it to the hoster if it's not there already. Call it "patte@air.local". Don't delete it. Neither from this machine, nor from the hoster.
+
+
 ## Hetzner (cmd/hetzner/)
 - Attach SSH keys by **id**, not name (attach-by-name silently does not inject the key).
 - IPs are recycled across creates → stale `~/.ssh/known_hosts` entries.
