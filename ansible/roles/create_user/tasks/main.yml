@@ -1,11 +1,12 @@
 ---
-# Some providers (e.g. Hetzner) only give you root on a fresh box.
-# This role bootstraps the unprivileged dev user so the rest of the
-# playbook (and future runs) can connect as that user instead of root.
-# It is skipped automatically when you are not connecting as root.
+# Some providers give you root on a fresh box (e.g. Hetzner); cloud-init images
+# (e.g. Infomaniak/OpenStack) instead refuse root and hand you a sudo-capable
+# bootstrap user like `ubuntu`. Either way, this role creates the unprivileged
+# dev user so the rest of the playbook (and future runs) connect as that user.
+# Skipped automatically once we're already connecting as the dev user.
 - name: Bootstrap the dev user
   become: true
-  when: ansible_user | default('') == 'root'
+  when: ansible_user | default('') != dev_user
   tags:
     - create_user
     - user
