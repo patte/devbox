@@ -195,6 +195,35 @@
       tags:
         - claude
 
+    # --- flyctl (Fly.io CLI) ---------------------------------------------
+    - name: Check whether flyctl is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.stat:
+        path: "/home/{{ dev_user }}/.local/bin/flyctl"
+      register: flyctl_installed
+      when: install_flyctl | bool
+      tags:
+        - flyctl
+
+    - name: Install flyctl (Fly.io CLI)
+      become: true
+      become_user: "{{ dev_user }}"
+      # FLYCTL_INSTALL=~/.local drops the binary in ~/.local/bin (already on the
+      # PATH we manage), so no extra PATH entry is needed. The installer
+      # self-updates via `fly version upgrade`, so we only run it when missing.
+      # ($HOME doesn't expand in ansible's environment, so spell out the path.)
+      ansible.builtin.shell:
+        cmd: "set -o pipefail; curl -L https://fly.io/install.sh | sh"
+        executable: /bin/bash
+      environment:
+        FLYCTL_INSTALL: "/home/{{ dev_user }}/.local"
+      when:
+        - install_flyctl | bool
+        - not flyctl_installed.stat.exists
+      tags:
+        - flyctl
+
     # --- atuin -----------------------------------------------------------
     - name: Check whether atuin is installed
       become: true

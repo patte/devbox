@@ -11,6 +11,9 @@ node_version: "--lts"
 # Claude Code, via the recommended native installer (installs to ~/.local/bin
 install_claude_code: true
 
+# Fly.io CLI (flyctl), via the official installer (installs to ~/.local/bin).
+install_flyctl: true
+
 # Container tooling.
 install_podman: true
 
