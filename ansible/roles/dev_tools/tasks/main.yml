@@ -217,6 +217,26 @@
       tags:
         - atuin
 
+    # --- Git identity ----------------------------------------------------
+    # Set name/email in the dev user's global ~/.gitconfig so `git commit`
+    # works immediately (no "Author identity unknown / please tell me who you
+    # are" prompt). Idempotent: git_config only writes when the value differs.
+    - name: Configure git identity for {{ dev_user }}
+      become: true
+      become_user: "{{ dev_user }}"
+      community.general.git_config:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        scope: global
+      loop:
+        - { name: "user.name", value: "{{ git_user_name }}" }
+        - { name: "user.email", value: "{{ git_user_email }}" }
+      when:
+        - git_user_name | length > 0
+        - git_user_email | length > 0
+      tags:
+        - git
+
     # --- Shell init ------------------------------------------------------
     # Two blocks: the PATH/fnm block goes at the TOP of .bashrc, before Ubuntu's
     # `case $- in *i*) ;; *) return` guard, so node/npm/pnpm/claude/atuin are

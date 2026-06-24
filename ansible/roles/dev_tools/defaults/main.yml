@@ -1,4 +1,9 @@
 ---
+# Git identity written to the dev user's global ~/.gitconfig, so `git commit`
+# works out of the box without the "Author identity unknown" error.
+git_user_name: "patte"
+git_user_email: "p@tte.io"
+
 # Node version selector passed to fnm (https://github.com/Schniz/fnm).
 # Examples: "--lts" (latest LTS), "22", "20.11.0", "lts/hydrogen".
 node_version: "--lts"
