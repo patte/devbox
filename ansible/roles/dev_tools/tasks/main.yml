@@ -224,6 +224,164 @@
       tags:
         - flyctl
 
+    # --- Cloudflare: wrangler (Workers/Pages) + cloudflared (Tunnel) -----
+    - name: Check whether wrangler is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      # wrangler lives in fnm's node global bin, whose path depends on the node
+      # version, so probe via `command -v` inside `fnm env` rather than stat-ing.
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          command -v wrangler
+        executable: /bin/bash
+      register: wrangler_installed
+      changed_when: false
+      failed_when: false
+      when: install_wrangler | bool
+      tags:
+        - cloudflare
+        - wrangler
+
+    - name: Install wrangler (Cloudflare Workers/Pages CLI) via npm
+      become: true
+      become_user: "{{ dev_user }}"
+      # Installs into fnm's node global bin (already on PATH via `fnm env`).
+      # wrangler only warns about new releases (no self-update), but re-running
+      # this is cheap; we still gate on "missing" to keep the play idempotent.
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          npm install -g wrangler
+        executable: /bin/bash
+      when:
+        - install_wrangler | bool
+        - wrangler_installed.rc != 0
+      tags:
+        - cloudflare
+        - wrangler
+
+    - name: Add Cloudflare apt signing key
+      become: true
+      # Already a binary keyring (the official docs pipe it straight to disk).
+      ansible.builtin.get_url:
+        url: https://pkg.cloudflare.com/cloudflare-main.gpg
+        dest: /usr/share/keyrings/cloudflare-main.gpg
+        mode: "0644"
+      when: install_cloudflared | bool
+      tags:
+        - cloudflare
+        - cloudflared
+
+    - name: Restrict Cloudflare apt repo to cloudflared only
+      become: true
+      # Defence-in-depth: pin everything from
+      # pkg.cloudflare.com to a negative priority and re-allow only the exact
+      # cloudflared package, so the repo can never introduce or override
+      # anything else on the system.
+      ansible.builtin.copy:
+        dest: /etc/apt/preferences.d/cloudflared.pref
+        mode: "0644"
+        content: |
+          Package: *
+          Pin: origin "pkg.cloudflare.com"
+          Pin-Priority: -10
+
+          Package: cloudflared
+          Pin: origin "pkg.cloudflare.com"
+          Pin-Priority: 500
+      when: install_cloudflared | bool
+      tags:
+        - cloudflare
+        - cloudflared
+
+    - name: Add Cloudflare apt repository
+      become: true
+      # `any main` is distro-agnostic (no codename), so it works on releases the
+      # codename-specific components don't list yet (e.g. Ubuntu 26.04).
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/cloudflared.list
+        mode: "0644"
+        content: |
+          deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main
+      when: install_cloudflared | bool
+      tags:
+        - cloudflare
+        - cloudflared
+
+    - name: Install cloudflared (Cloudflare Tunnel)
+      become: true
+      ansible.builtin.apt:
+        name: cloudflared
+        state: present
+        update_cache: yes
+      when: install_cloudflared | bool
+      tags:
+        - cloudflare
+        - cloudflared
+
+    # --- Google Cloud CLI (gcloud) via official apt repo ----------------
+    - name: Add Google Cloud apt signing key
+      become: true
+      # apt-key.gpg is ASCII-armored, and apt's signed-by rejects armored keys
+      # ("unsupported filetype"), so dearmor it to a binary keyring (gpg ships
+      # with Ubuntu). `creates` keeps this idempotent.
+      ansible.builtin.shell:
+        cmd: "set -o pipefail; curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg"
+        executable: /bin/bash
+        creates: /usr/share/keyrings/cloud.google.gpg
+      when: install_gcloud | bool
+      tags:
+        - gcloud
+
+    - name: Restrict Google Cloud apt repo to Google's own packages
+      become: true
+      # Defence-in-depth: allow only Google-namespaced packages (google-cloud-cli
+      # core + its official component packages, plus the legacy google-cloud-sdk*
+      # names) and pin everything else from the archive to a negative priority
+      # (= never install). The repo therefore can't introduce or override any
+      # package that isn't named google-* (e.g. it can't ship its own openssl).
+      # Order matters: with glob pins the first matching stanza wins, so the
+      # google-* allow must come before the catch-all deny.
+      ansible.builtin.copy:
+        dest: /etc/apt/preferences.d/google-cloud-cli.pref
+        mode: "0644"
+        content: |
+          Package: google-*
+          Pin: origin "packages.cloud.google.com"
+          Pin-Priority: 500
+
+          Package: *
+          Pin: origin "packages.cloud.google.com"
+          Pin-Priority: -10
+      when: install_gcloud | bool
+      tags:
+        - gcloud
+
+    - name: Add Google Cloud apt repository
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/google-cloud-sdk.list
+        mode: "0644"
+        content: |
+          deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
+      when: install_gcloud | bool
+      tags:
+        - gcloud
+
+    - name: Install Google Cloud CLI (gcloud)
+      become: true
+      ansible.builtin.apt:
+        name: google-cloud-cli
+        state: present
+        update_cache: yes
+      when: install_gcloud | bool
+      tags:
+        - gcloud
+
     # --- atuin -----------------------------------------------------------
     - name: Check whether atuin is installed
       become: true

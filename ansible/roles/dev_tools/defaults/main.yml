@@ -14,6 +14,15 @@ install_claude_code: true
 # Fly.io CLI (flyctl), via the official installer (installs to ~/.local/bin).
 install_flyctl: true
 
+# Cloudflare Workers/Pages CLI (wrangler), installed globally via npm (needs node).
+install_wrangler: true
+
+# Cloudflare Tunnel daemon/CLI (cloudflared), via the official apt repo.
+install_cloudflared: true
+
+# Google Cloud CLI (gcloud), via the official apt repo.
+install_gcloud: true
+
 # Container tooling.
 install_podman: true
 
