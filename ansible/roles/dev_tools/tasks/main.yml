@@ -256,6 +256,9 @@
         src: pi-AGENTS.md.j2
         dest: "/home/{{ dev_user }}/.pi/agent/AGENTS.md"
         mode: "0644"
+        # Keep a timestamped copy when the on-box file differs, so a hand-edited
+        # AGENTS.md isn't silently clobbered by a provision run (recoverable).
+        backup: true
       when: install_pi | bool
       tags:
         - pi
