@@ -195,6 +195,99 @@
       tags:
         - claude
 
+    # --- pi (coding agent harness, https://pi.dev) -----------------------
+    - name: Check whether pi is installed
+      become: true
+      become_user: "{{ dev_user }}"
+      # pi installs into Node's global bin (path depends on the node version),
+      # so probe via `command -v` inside `fnm env` rather than stat-ing.
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          command -v pi
+        executable: /bin/bash
+      register: pi_installed
+      changed_when: false
+      failed_when: false
+      when: install_pi | bool
+      tags:
+        - pi
+
+    - name: Install pi (coding agent harness)
+      become: true
+      become_user: "{{ dev_user }}"
+      # Install the npm package directly (same thing pi.dev/install.sh ends up
+      # doing) under fnm env, so it uses our managed Node and lands in Node's
+      # global bin (already on PATH via `fnm env`). We skip the curl installer
+      # because it draws an interactive tty menu (choose_pi_action) that blocks
+      # forever under ansible's pty. --ignore-scripts (per pi's docs) avoids any
+      # postinstall hooks. Gated on "missing" to keep the play idempotent.
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+        executable: /bin/bash
+      when:
+        - install_pi | bool
+        - pi_installed.rc != 0
+      tags:
+        - pi
+
+    - name: Warn when pi credentials are missing
+      ansible.builtin.debug:
+        msg: >-
+          pi_api_key / pi_product_id are empty — skipping pi's models.json. Set
+          them in the vault (scripts/vault.sh edit
+          inventory/group_vars/all/vault.yml) to configure the Infomaniak provider.
+      when:
+        - install_pi | bool
+        - (pi_api_key | length == 0) or (pi_product_id | length == 0)
+      tags:
+        - pi
+
+    - name: Ensure pi agent config directory exists
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.file:
+        path: "/home/{{ dev_user }}/.pi/agent"
+        state: directory
+        mode: "0700"
+      when:
+        - install_pi | bool
+        - pi_api_key | length > 0
+        - pi_product_id | length > 0
+      tags:
+        - pi
+
+    - name: Configure pi models (Infomaniak provider)
+      become: true
+      become_user: "{{ dev_user }}"
+      # Holds the API key → 0600. Only written when pi_api_key + pi_product_id
+      # are set (from the vault; empty by default).
+      ansible.builtin.copy:
+        dest: "/home/{{ dev_user }}/.pi/agent/models.json"
+        mode: "0600"
+        content: |
+          {{ {
+            "providers": {
+              "infomaniak": {
+                "baseUrl": pi_base_url,
+                "api": "openai-completions",
+                "apiKey": pi_api_key,
+                "models": pi_models,
+              },
+            },
+          } | to_nice_json }}
+      when:
+        - install_pi | bool
+        - pi_api_key | length > 0
+        - pi_product_id | length > 0
+      tags:
+        - pi
+
     # --- flyctl (Fly.io CLI) ---------------------------------------------
     - name: Check whether flyctl is installed
       become: true

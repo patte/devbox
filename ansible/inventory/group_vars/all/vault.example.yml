@@ -18,3 +18,9 @@ tailscale_oauth_secret: "CHANGE_ME"
 # Address that unattended-upgrades emails on errors (kept here so the public
 # repo's plaintext vars don't expose it).
 admin_email: "CHANGE_ME"
+
+# Infomaniak AI Tools (OpenAI-compatible) credentials for the pi coding agent.
+# product_id is the AI Tools product in the Infomaniak Manager; it forms part of
+# the API base URL. Leave empty to skip writing pi's models.json on the box.
+pi_api_key: "CHANGE_ME"
+pi_product_id: "CHANGE_ME"

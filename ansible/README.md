@@ -2,7 +2,7 @@
 
 Provisions Ubuntu hosts into carefree playfields for AI agents: hardened base
 system, optional Tailscale, and a developer toolchain (fnm + Node + pnpm, uv, Claude Code,
-Rust, atuin, btop, podman + compose, zsh + starship). Your laptop stays "just a
+pi, Rust, atuin, btop, podman + compose, zsh + starship). Your laptop stays "just a
 terminal" — you SSH in over tailscale.
 
 ## Layout
@@ -26,7 +26,7 @@ ansible/
 │   ├── create_user/            # makes the dev user (+ passwordless sudo)
 │   ├── system_setup/           # ssh hardening, ufw, unattended-upgrades, ...
 │   ├── tailscale/              # optional per host (tailscale_enabled); waits for signing
-│   ├── dev_tools/              # fnm+node+pnpm, uv, gh, Claude Code, Rust, atuin, btop, podman+compose, zsh+starship
+│   ├── dev_tools/              # fnm+node+pnpm, uv, gh, Claude Code, pi, Rust, atuin, btop, podman+compose, zsh+starship
 │   └── ssh_tailscale_only/     # close public SSH, allow only over tailscale (runs last)
 └── scripts/
     ├── setup.sh                # install ansible collections (run once)
@@ -121,6 +121,13 @@ Set these as host vars in `inventory/hosts`:
   extra (jonas) SSH key — not relevant here.
 - **podman** is installed rootless: linger is enabled for the dev user and the
   user `podman.socket` is started, so agent containers keep running after logout.
+- **pi** ([pi.dev](https://pi.dev)) is installed under fnm's Node. Its Infomaniak
+  models are configured in `~/.pi/agent/models.json` (the three `pi_models` in
+  `dev_tools/defaults`, under an OpenAI-compatible `infomaniak` provider). The API
+  key + product id come from `pi_api_key` / `pi_product_id` in the **vault**
+  (`scripts/vault.sh edit inventory/group_vars/all/vault.yml`). Empty creds →
+  models.json is skipped (pi still installs). Rotate the key by editing the vault
+  and re-running `./scripts/provision.sh --tags pi`.
 
 ## Creating / destroying Hetzner servers
 

@@ -12,7 +12,7 @@
     - role: tailscale
       when: tailscale_enabled | default(true) | bool
 
-    # fnm + node + pnpm, uv, gh, Claude Code, atuin, podman (+ compose), zsh + starship.
+    # fnm + node + pnpm, uv, gh, Claude Code, pi, atuin, podman (+ compose), zsh + starship.
     - role: dev_tools
 
     # LAST: close public SSH, allow it only over the tailnet. Needs tailscale up,

@@ -9,6 +9,9 @@ Notes for AI agents working in this repo. Keep short; append things future-you w
   file, inline the literal values into a command, or `echo` them — that leaks the plaintext
   into the transcript. (`export HCLOUD_TOKEN="$HETZNER_API_KEY"` for the cmd/hetzner scripts.)
 - Encrypted vault: `ansible/inventory/group_vars/all/vault.yml`. Edit via `ansible/scripts/vault.sh`.
+- **pi** agent's Infomaniak creds (`pi_api_key`, `pi_product_id`) live in the vault alongside the
+  others; dev_tools writes them into `~/.pi/agent/models.json` (0600) on the box. (A leftover
+  repo-root `.env` is gitignored — same rule as above: **never** `Read`/`cat`/`echo` it.)
 
 ## Connecting to test boxes (SSH key)
 - The operator's real key (`github.com/patte.keys`) is a Secretive / Touch-ID key — unusable headless.
