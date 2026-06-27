@@ -36,6 +36,12 @@ install_rust: true
 # fnm's Node (the curl installer's tty menu blocks under ansible).
 install_pi: true
 
+# pi extension packages to install (via `pi install npm:<name>`). Loaded into
+# every pi session once installed; a restart is needed to pick them up (we just
+# install, the next `pi` launch loads them).
+pi_packages:
+  - "npm:@juicesharp/rpiv-ask-user-question"
+
 # Infomaniak AI Tools (OpenAI-compatible) credentials for pi. The real values
 # live in the ansible vault (inventory/group_vars/all/vault.yml), which overrides
 # these empty fallbacks. If either is empty, pi's models.json is not written.

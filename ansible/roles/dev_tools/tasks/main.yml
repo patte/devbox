@@ -236,6 +236,46 @@
       tags:
         - pi
 
+    - name: List installed pi packages
+      become: true
+      become_user: "{{ dev_user }}"
+      # `pi list` prints one installed package per line (e.g. npm:@foo/bar); we
+      # diff against pi_packages below to stay idempotent and avoid reinstalling.
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          pi list
+        executable: /bin/bash
+      register: pi_packages_installed
+      changed_when: false
+      failed_when: false
+      when:
+        - install_pi | bool
+        - pi_packages | length > 0
+      tags:
+        - pi
+
+    - name: Install pi extension packages
+      become: true
+      become_user: "{{ dev_user }}"
+      # Packages can run code / influence agent behaviour, so keep pi_packages to
+      # vetted entries. Loaded into every pi session on the next launch.
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          eval "$(fnm env --shell bash)"
+          pi install {{ item | quote }}
+        executable: /bin/bash
+      loop: "{{ pi_packages }}"
+      when:
+        - install_pi | bool
+        - pi_packages | length > 0
+        - item not in (pi_packages_installed.stdout | default(''))
+      tags:
+        - pi
+
     - name: Ensure pi agent config directory exists
       become: true
       become_user: "{{ dev_user }}"
