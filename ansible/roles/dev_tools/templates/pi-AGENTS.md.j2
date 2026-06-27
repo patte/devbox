@@ -1,0 +1,24 @@
+{# Rendered to ~/.pi/agent/AGENTS.md — pi loads this into EVERY session on this
+   box (concatenated onto its minimal default prompt). Keep short; only what the
+   agent can't infer from the environment. #}
+# This box
+
+Throwaway Ubuntu coding box. You have **passwordless `sudo`**. Shell is zsh.
+
+## Preinstalled
+- **Node** + npm + pnpm (via fnm), **Python** (via uv){% if install_rust %}, **Rust** (cargo, rustc){% endif %}{% if install_podman %}, **podman** + compose (rootless — use instead of docker){% endif %}
+- CLIs: `git`, `gh`, `jq`, `btop`, `tmux`, `nvim`, `psql`{% if install_claude_code %}, `claude`{% endif %}, `pi`{% if install_flyctl %}, `flyctl`{% endif %}{% if install_wrangler %}, `wrangler`{% endif %}{% if install_cloudflared %}, `cloudflared`{% endif %}{% if install_gcloud %}, `gcloud`{% endif %}
+
+## Installing more
+- Python: `uv add <pkg>` (in a project) or `uvx <tool>` for one-offs — never global `pip`
+- Node: `pnpm add <pkg>`; `npm i -g <tool>` for CLIs
+{% if install_rust %}- Rust: `cargo install <tool>`
+{% endif %}- System: `sudo apt-get install -y <pkg>` (last resort)
+
+
+# Working style
+- Ask when something is unclear instead of guessing — discuss and pick the best option.
+- Close the loop: verify your work, use an oracle (run it, test it) whenever you can.
+- Run the available linters and tests on anything you touched before calling a task done.
+- Experiment freely — this is a throwaway box. Restart things, recreate the db, try stuff out.
+- Don't commit or open/comment on PRs; leave that to the operator. After a task, hand back a clear, concise commit message.

@@ -236,6 +236,30 @@
       tags:
         - pi
 
+    - name: Ensure pi agent config directory exists
+      become: true
+      become_user: "{{ dev_user }}"
+      ansible.builtin.file:
+        path: "/home/{{ dev_user }}/.pi/agent"
+        state: directory
+        mode: "0700"
+      when: install_pi | bool
+      tags:
+        - pi
+
+    - name: Write global pi AGENTS.md (box toolchain notes)
+      become: true
+      become_user: "{{ dev_user }}"
+      # pi concatenates ~/.pi/agent/AGENTS.md into every session, so this tells
+      # the agent which tools are preinstalled and how to add more (uv, pnpm, …).
+      ansible.builtin.template:
+        src: pi-AGENTS.md.j2
+        dest: "/home/{{ dev_user }}/.pi/agent/AGENTS.md"
+        mode: "0644"
+      when: install_pi | bool
+      tags:
+        - pi
+
     - name: Warn when pi credentials are missing
       ansible.builtin.debug:
         msg: >-
@@ -245,20 +269,6 @@
       when:
         - install_pi | bool
         - (pi_api_key | length == 0) or (pi_product_id | length == 0)
-      tags:
-        - pi
-
-    - name: Ensure pi agent config directory exists
-      become: true
-      become_user: "{{ dev_user }}"
-      ansible.builtin.file:
-        path: "/home/{{ dev_user }}/.pi/agent"
-        state: directory
-        mode: "0700"
-      when:
-        - install_pi | bool
-        - pi_api_key | length > 0
-        - pi_product_id | length > 0
       tags:
         - pi
 
