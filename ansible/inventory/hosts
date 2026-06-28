@@ -1,4 +1,6 @@
 [coding]
+box-i ansible_host=box-i
+
 # --- Fresh Hetzner box (root only on init) ---------------------------------
 # Step 1 (once): create the dev user, connecting as root (use the PUBLIC ip):
 #   scripts/bootstrap.sh --limit box1
