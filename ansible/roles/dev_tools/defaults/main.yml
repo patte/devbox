@@ -36,11 +36,13 @@ install_rust: true
 # fnm's Node (the curl installer's tty menu blocks under ansible).
 install_pi: true
 
-# pi extension packages to install (via `pi install npm:<name>`). Loaded into
+# pi extension packages to install (via `pi install <name>`). Loaded into
 # every pi session once installed; a restart is needed to pick them up (we just
-# install, the next `pi` launch loads them).
+# install, the next `pi` launch loads them). Entries can be npm refs
+# (`npm:<name>`) or pi.dev registry packages bare names,
 pi_packages:
   - "npm:@juicesharp/rpiv-ask-user-question"
+  - "npm:pi-web-access"
 
 # Infomaniak AI Tools (OpenAI-compatible) credentials for pi. The real values
 # live in the ansible vault (inventory/group_vars/all/vault.yml), which overrides
